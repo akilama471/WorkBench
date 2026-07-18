@@ -1,0 +1,14 @@
+﻿=== RUN   TestDatabaseOpenAndMigrate
+--- PASS: TestDatabaseOpenAndMigrate (5.27s)
+=== RUN   TestDatabaseSettings
+--- PASS: TestDatabaseSettings (0.03s)
+=== RUN   TestDatabaseGetSettingNotExist
+--- PASS: TestDatabaseGetSettingNotExist (0.02s)
+=== RUN   TestDatabaseDeleteSetting
+--- PASS: TestDatabaseDeleteSetting (0.04s)
+=== RUN   TestDatabaseGetAllSettings
+--- PASS: TestDatabaseGetAllSettings (0.03s)
+=== RUN   TestDatabaseIdempotentMigrations
+--- PASS: TestDatabaseIdempotentMigrations (0.03s)
+PASS
+ok  	github.com/akilama471/WorkBench/internal/database	5.819s
