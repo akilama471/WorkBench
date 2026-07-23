@@ -11,7 +11,7 @@ import (
 )
 
 func BuildDashboard(app *apppkg.Application) fyne.CanvasObject {
-	title := widget.NewLabel("DevBox Dashboard")
+	title := widget.NewLabel("WorkBench")
 	title.TextStyle = fyne.TextStyle{Bold: true}
 
 	apacheStatus := widget.NewLabel("Apache: Unknown")

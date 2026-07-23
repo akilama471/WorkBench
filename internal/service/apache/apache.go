@@ -233,15 +233,13 @@ func (s *Service) ensureConfig() error {
 	content = replaceConfigValue(content, "Define SRVROOT", fmt.Sprintf(`Define SRVROOT "%s"`, filepath.ToSlash(binDir)))
 	content = replaceConfigValue(content, "ServerRoot", fmt.Sprintf(`ServerRoot "%s"`, filepath.ToSlash(binDir)))
 	content = replaceConfigValue(content, "DocumentRoot", fmt.Sprintf(`DocumentRoot "%s"`, filepath.ToSlash(filepath.Join(wwwDir, "www"))))
-	content = replaceConfigValueDir(content, `DocumentRoot "D:/laragon/www"`, fmt.Sprintf(`<Directory "%s">`, filepath.ToSlash(filepath.Join(wwwDir, "www"))))
+	content = replaceConfigValueDir(content, `<Directory "${SRVROOT}/htdocs">`, fmt.Sprintf(`<Directory "%s">`, filepath.ToSlash(filepath.Join(wwwDir, "www"))))
 	content = replaceConfigLine(content, "ErrorLog", fmt.Sprintf(`ErrorLog "%s"`, filepath.ToSlash(filepath.Join(logsDir, "error.log"))))
 	content = replaceConfigLine(content, "CustomLog", fmt.Sprintf(`CustomLog "%s" common`, filepath.ToSlash(filepath.Join(logsDir, "access.log"))))
-	content = replaceConfigLine(content, "ServerName Laragon", `ServerName localhost`)
 
-	content = removeConfigLines(content, `IncludeOptional "D:/laragon/etc/apache2/alias/*.conf"`)
-	content = removeConfigLines(content, `IncludeOptional "D:/laragon/etc/apache2/sites-enabled/*.conf"`)
-	content = removeConfigLines(content, `Include "D:/laragon/etc/apache2/httpd-ssl.conf"`)
-	content = removeConfigLines(content, `Include "D:/laragon/etc/apache2/mod_php.conf"`)
+	if !strings.Contains(content, "ServerName localhost") {
+		content += "\nServerName localhost\n"
+	}
 
 	if err := os.MkdirAll(etcDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create etc/apache directory: %w", err)
