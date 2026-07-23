@@ -1,4 +1,4 @@
-//go:build windows
+//go:build darwin
 
 package process
 
@@ -24,16 +24,6 @@ func (m *manager) Start(config StartConfig) (*Process, error) {
 	cmd := exec.Command(config.Executable, config.Args...)
 	cmd.Dir = config.Directory
 	cmd.Env = config.Environment
-
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP,
-	}
-
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create stderr pipe: %w", err)
-	}
-	_ = stderr
 
 	if err := cmd.Start(); err != nil {
 		return nil, fmt.Errorf("failed to start process %s: %w", config.Executable, err)
@@ -72,18 +62,11 @@ func (m *manager) Stop(pid int) error {
 }
 
 func (m *manager) IsRunning(pid int) bool {
-	handle, err := syscall.OpenProcess(syscall.PROCESS_QUERY_INFORMATION, false, uint32(pid))
-	if err != nil {
-		return false
-	}
-	defer syscall.CloseHandle(handle)
-
-	var exitCode uint32
-	err = syscall.GetExitCodeProcess(handle, &exitCode)
+	p, err := os.FindProcess(pid)
 	if err != nil {
 		return false
 	}
 
-	const STILL_ACTIVE = 259
-	return exitCode == STILL_ACTIVE
+	err = p.Signal(syscall.Signal(0))
+	return err == nil
 }

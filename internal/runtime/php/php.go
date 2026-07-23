@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/akilama471/WorkBench/internal/filesystem"
 	"github.com/akilama471/WorkBench/internal/logger"
 	"github.com/akilama471/WorkBench/internal/runtime"
 )
+
+var versionPattern = regexp.MustCompile(`(\d+\.\d+\.\d+)`)
 
 type Runtime struct {
 	paths *filesystem.Paths
@@ -44,14 +47,23 @@ func (r *Runtime) InstalledVersions() ([]runtime.Version, error) {
 			continue
 		}
 
-		if r.isValidPHPInstallation(entry.Name()) {
-			versions = append(versions, runtime.Version{
-				Version:     entry.Name(),
-				Path:        filepath.Join(phpBinDir, entry.Name()),
-				IsActive:    entry.Name() == active,
-				IsInstalled: true,
-			})
+		dirName := entry.Name()
+		version := extractVersion(dirName)
+		if version == "" {
+			continue
 		}
+
+		fullPath := filepath.Join(phpBinDir, dirName)
+		if !r.isValidPHPDir(fullPath) {
+			continue
+		}
+
+		versions = append(versions, runtime.Version{
+			Version:     version,
+			Path:        fullPath,
+			IsActive:    version == active,
+			IsInstalled: true,
+		})
 	}
 
 	return versions, nil
@@ -102,7 +114,7 @@ func (r *Runtime) Use(version string) error {
 		return fmt.Errorf("PHP version %s: %w", version, runtime.ErrVersionNotFound)
 	}
 
-	if !r.isValidPHPInstallation(version) {
+	if !r.isValidPHPDir(target.Path) {
 		return fmt.Errorf("PHP version %s: %w", version, runtime.ErrInvalidVersion)
 	}
 
@@ -145,23 +157,33 @@ func (r *Runtime) activePHPFile() string {
 	return filepath.Join(r.paths.Active(), "php")
 }
 
-func (r *Runtime) isValidPHPInstallation(version string) bool {
-	binDir := filepath.Join(r.paths.Bin(), "php", version)
-	entries, err := os.ReadDir(binDir)
+func (r *Runtime) isValidPHPDir(dirPath string) bool {
+	entries, err := os.ReadDir(dirPath)
 	if err != nil {
 		return false
 	}
 
-	hasPHP := false
 	for _, entry := range entries {
 		name := strings.ToLower(entry.Name())
 		if name == "php.exe" || name == "php" {
-			hasPHP = true
-			break
+			return true
 		}
 	}
 
-	return hasPHP
+	binSubdir := filepath.Join(dirPath, "bin")
+	binEntries, err := os.ReadDir(binSubdir)
+	if err != nil {
+		return false
+	}
+
+	for _, entry := range binEntries {
+		name := strings.ToLower(entry.Name())
+		if name == "php.exe" || name == "php" {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (r *Runtime) verifyActiveVersion(version string) error {
@@ -175,9 +197,23 @@ func (r *Runtime) verifyActiveVersion(version string) error {
 		return fmt.Errorf("active PHP version mismatch: expected %s, got %s", version, active)
 	}
 
-	if !r.isValidPHPInstallation(active) {
-		return fmt.Errorf("active PHP version %s is not a valid installation", active)
+	versions, err := r.InstalledVersions()
+	if err != nil {
+		return err
 	}
 
-	return nil
+	for _, v := range versions {
+		if v.Version == active {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("active PHP version %s is not a valid installation", active)
+}
+
+func extractVersion(dirName string) string {
+	if m := versionPattern.FindString(dirName); m != "" {
+		return m
+	}
+	return ""
 }

@@ -45,9 +45,10 @@ const (
 )
 
 type Logger struct {
-	mu     sync.RWMutex
-	level  Level
-	output io.Writer
+	mu      sync.RWMutex
+	level   Level
+	output  io.Writer
+	writers []io.Writer
 }
 
 func New(level Level, output io.Writer) *Logger {
@@ -58,6 +59,12 @@ func New(level Level, output io.Writer) *Logger {
 		level:  level,
 		output: output,
 	}
+}
+
+func (l *Logger) AddWriter(w io.Writer) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.writers = append(l.writers, w)
 }
 
 func (l *Logger) SetLevel(level Level) {
@@ -85,6 +92,7 @@ func (l *Logger) Error(category Category, msg string, args ...any) {
 func (l *Logger) log(level Level, category Category, msg string, args ...any) {
 	l.mu.RLock()
 	currentLevel := l.level
+	writers := l.writers
 	l.mu.RUnlock()
 
 	if level < currentLevel {
@@ -106,10 +114,15 @@ func (l *Logger) log(level Level, category Category, msg string, args ...any) {
 	}
 
 	b.WriteString("\n")
+	data := []byte(b.String())
 
 	l.mu.RLock()
 	defer l.mu.RUnlock()
-	_, _ = l.output.Write([]byte(b.String()))
+
+	_, _ = l.output.Write(data)
+	for _, w := range writers {
+		_, _ = w.Write(data)
+	}
 }
 
 func (l *Logger) WithPrefix(prefix string) *PrefixLogger {

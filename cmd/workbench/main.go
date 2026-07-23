@@ -26,8 +26,8 @@ func main() {
 	}
 	defer application.Close()
 
-	if err := application.InitializeEnvironment(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: failed to initialize environment: %v\n", err)
+	if err := application.Startup(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 

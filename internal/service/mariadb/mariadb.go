@@ -1,6 +1,7 @@
 package mariadb
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -95,7 +96,12 @@ func (s *Service) Start() error {
 func (s *Service) Stop() error {
 	s.log.Info(logger.CategoryService, "stopping MariaDB")
 
-	if s.status != service.StatusRunning {
+	if s.pid == 0 {
+		s.pid = s.readPIDFile()
+	}
+
+	if s.pid == 0 || !s.process.IsRunning(s.pid) {
+		s.status = service.StatusStopped
 		return fmt.Errorf("%s: %w", s.ID(), service.ErrServiceNotRunning)
 	}
 
@@ -113,7 +119,7 @@ func (s *Service) Stop() error {
 }
 
 func (s *Service) Restart() error {
-	if err := s.Stop(); err != nil && err != service.ErrServiceNotRunning {
+	if err := s.Stop(); err != nil && !errors.Is(err, service.ErrServiceNotRunning) {
 		return fmt.Errorf("failed to restart MariaDB (stop phase): %w", err)
 	}
 	return s.Start()
@@ -125,26 +131,49 @@ func (s *Service) Status() service.Status {
 			s.status = service.StatusStopped
 			s.pid = 0
 		}
+		return s.status
 	}
+
+	if pid := s.readPIDFile(); pid > 0 && s.process.IsRunning(pid) {
+		s.pid = pid
+		s.status = service.StatusRunning
+		return s.status
+	}
+
 	return s.status
+}
+
+func (s *Service) readPIDFile() int {
+	pidPath := filepath.Join(s.paths.MariaDBData(), "mariadb.pid")
+	data, err := os.ReadFile(pidPath)
+	if err != nil {
+		return 0
+	}
+	var pid int
+	if _, err := fmt.Sscanf(strings.TrimSpace(string(data)), "%d", &pid); err != nil {
+		return 0
+	}
+	return pid
 }
 
 func (s *Service) resolveBinDir() string {
 	dirs, _ := os.ReadDir(s.paths.Bin())
+
 	for _, d := range dirs {
-		if d.IsDir() && strings.HasPrefix(d.Name(), "mariadb") {
-			return filepath.Join(s.paths.Bin(), d.Name())
+		if d.IsDir() && (d.Name() == "mariadb" || d.Name() == "mysql") {
+			subDirs, _ := os.ReadDir(filepath.Join(s.paths.Bin(), d.Name()))
+			for _, sd := range subDirs {
+				if sd.IsDir() {
+					return filepath.Join(s.paths.Bin(), d.Name(), sd.Name())
+				}
+			}
 		}
 	}
 
 	for _, d := range dirs {
-		if d.IsDir() && d.Name() == "mariadb" {
-			subDirs, _ := os.ReadDir(filepath.Join(s.paths.Bin(), "mariadb"))
-			for _, sd := range subDirs {
-				if sd.IsDir() {
-					return filepath.Join(s.paths.Bin(), "mariadb", sd.Name())
-				}
-			}
+		name := d.Name()
+		if d.IsDir() && (strings.HasPrefix(name, "mariadb") || strings.HasPrefix(name, "mysql")) && name != "mariadb" && name != "mysql" {
+			return filepath.Join(s.paths.Bin(), name)
 		}
 	}
 
@@ -153,13 +182,18 @@ func (s *Service) resolveBinDir() string {
 
 func (s *Service) resolveExecutable() string {
 	binDir := s.resolveBinDir()
-	mysqld := filepath.Join(binDir, "mysqld.exe")
-	if _, err := os.Stat(mysqld); err == nil {
-		return mysqld
+
+	candidates := []string{
+		filepath.Join(binDir, "mysqld.exe"),
+		filepath.Join(binDir, "bin", "mysqld.exe"),
+		filepath.Join(binDir, "mysqld"),
+		filepath.Join(binDir, "bin", "mysqld"),
 	}
-	mysqld = filepath.Join(binDir, "mysqld")
-	if _, err := os.Stat(mysqld); err == nil {
-		return mysqld
+
+	for _, path := range candidates {
+		if _, err := os.Stat(path); err == nil {
+			return path
+		}
 	}
 	return ""
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/akilama471/WorkBench/internal/database"
 	"github.com/akilama471/WorkBench/internal/filesystem"
 	"github.com/akilama471/WorkBench/internal/logger"
+	pkg "github.com/akilama471/WorkBench/internal/package"
 	"github.com/akilama471/WorkBench/internal/process"
 	"github.com/akilama471/WorkBench/internal/project"
 	"github.com/akilama471/WorkBench/internal/service/apache"
@@ -29,6 +30,7 @@ type Application struct {
 	RuntimeManager *core.RuntimeManager
 	Environment    *core.EnvironmentManager
 	ProjectManager *project.Manager
+	PackageManager *pkg.Manager
 	ConfigManager  *config.Manager
 	ConfigWriter   *config.Writer
 	ConfigLoader   *config.Loader
@@ -64,6 +66,7 @@ func New(rootDir string) (*Application, error) {
 	runtimeManager := core.NewRuntimeManager(paths, log)
 
 	projectManager := project.NewManager()
+	packageManager := pkg.NewManager(paths, log)
 
 	app := &Application{
 		log:            log,
@@ -75,6 +78,7 @@ func New(rootDir string) (*Application, error) {
 		RuntimeManager: runtimeManager,
 		Environment:    envManager,
 		ProjectManager: projectManager,
+		PackageManager: packageManager,
 		ConfigManager:  configMgr,
 		ConfigWriter:   configWriter,
 		ConfigLoader:   configLoader,
@@ -84,6 +88,7 @@ func New(rootDir string) (*Application, error) {
 }
 
 func (a *Application) InitializeEnvironment() error {
+	a.log.Info(logger.CategoryApplication, "initializing environment", "root", a.paths.Root())
 	return a.Environment.Initialize()
 }
 
@@ -105,11 +110,33 @@ func (a *Application) OpenDatabase() error {
 	}
 
 	a.db = db
+	a.log.Info(logger.CategoryDatabase, "database opened", "path", dbPath)
 	return nil
 }
 
 func (a *Application) Database() *database.Database {
 	return a.db
+}
+
+func (a *Application) Paths() *filesystem.Paths {
+	return a.paths
+}
+
+func (a *Application) Logger() *logger.Logger {
+	return a.log
+}
+
+func (a *Application) Startup() error {
+	if err := a.InitializeEnvironment(); err != nil {
+		return fmt.Errorf("failed to initialize environment: %w", err)
+	}
+
+	if err := a.OpenDatabase(); err != nil {
+		return fmt.Errorf("failed to open database: %w", err)
+	}
+
+	a.log.Info(logger.CategoryApplication, "application started")
+	return nil
 }
 
 func (a *Application) Close() error {
@@ -120,6 +147,7 @@ func (a *Application) Close() error {
 }
 
 func (a *Application) StartService(id string) error {
+	a.log.Info(logger.CategoryService, "starting service", "id", id)
 	err := a.ServiceManager.Start(id)
 	if err == nil {
 		a.events.Publish(events.Event{Type: events.ServiceStarted, Payload: id})
@@ -130,6 +158,7 @@ func (a *Application) StartService(id string) error {
 }
 
 func (a *Application) StopService(id string) error {
+	a.log.Info(logger.CategoryService, "stopping service", "id", id)
 	err := a.ServiceManager.Stop(id)
 	if err == nil {
 		a.events.Publish(events.Event{Type: events.ServiceStopped, Payload: id})
@@ -140,9 +169,12 @@ func (a *Application) StopService(id string) error {
 }
 
 func (a *Application) RestartService(id string) error {
+	a.log.Info(logger.CategoryService, "restarting service", "id", id)
 	err := a.ServiceManager.Restart(id)
 	if err == nil {
 		a.events.Publish(events.Event{Type: events.ServiceStatusChanged, Payload: id})
+	} else {
+		a.events.Publish(events.Event{Type: events.ServiceError, Payload: map[string]string{"service": id, "error": err.Error()}})
 	}
 	return err
 }
@@ -173,11 +205,49 @@ func (a *Application) CurrentPHPVersion() (string, error) {
 }
 
 func (a *Application) SwitchPHPVersion(version string) error {
+	a.log.Info(logger.CategoryRuntime, "switching PHP version", "target", version)
+
 	err := a.RuntimeManager.SwitchPHPVersion(version)
-	if err == nil {
-		a.events.Publish(events.Event{Type: events.PHPVersionChanged, Payload: version})
+	if err != nil {
+		a.events.Publish(events.Event{Type: events.ServiceError, Payload: map[string]string{"component": "php", "error": err.Error()}})
+		return err
 	}
-	return err
+
+	a.events.Publish(events.Event{Type: events.PHPVersionChanged, Payload: version})
+
+	if a.isServiceRunning("apache") {
+		a.log.Info(logger.CategoryRuntime, "restarting Apache for PHP change", "php", version)
+		if restartErr := a.RestartService("apache"); restartErr != nil {
+			a.log.Warn(logger.CategoryRuntime, "Apache restart after PHP switch failed", "error", restartErr)
+		}
+	}
+
+	return nil
+}
+
+func (a *Application) isServiceRunning(id string) bool {
+	status, err := a.ServiceManager.Status(id)
+	if err != nil {
+		return false
+	}
+	return status.String() == "Running"
+}
+
+func (a *Application) GetEnvironmentStatus() map[string]string {
+	summary := make(map[string]string)
+
+	for _, svc := range a.ServiceManager.AllServices() {
+		summary[svc.ID()] = svc.Status().String()
+	}
+
+	phpVersion, err := a.CurrentPHPVersion()
+	if err != nil || phpVersion == "" || phpVersion == "none" {
+		summary["php"] = "none"
+	} else {
+		summary["php"] = phpVersion
+	}
+
+	return summary
 }
 
 func (a *Application) Events() *events.Bus {

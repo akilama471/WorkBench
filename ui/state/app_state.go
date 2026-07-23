@@ -12,7 +12,7 @@ type ServiceState struct {
 }
 
 type AppState struct {
-	Services map[string]*ServiceState
+	Services   map[string]*ServiceState
 	PHPVersion string
 }
 
