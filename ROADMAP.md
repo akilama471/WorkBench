@@ -1,10 +1,10 @@
 # ROADMAP.md
 
-# DevBox — Phase 1 Implementation Roadmap
+# WorkBench — Phase 1 Implementation Roadmap
 
-This document defines the implementation roadmap for **DevBox Phase 1**.
+This document defines the implementation roadmap for **WorkBench Phase 1**.
 
-DevBox is a native, lightweight, cross-platform local development environment manager built with Go.
+WorkBench is a native, lightweight, cross-platform local development environment manager built with Go.
 
 The Phase 1 objective is to build a stable foundation supporting:
 
@@ -24,9 +24,9 @@ Read `AGENTS.md` before implementing any task.
 
 At the end of Phase 1, a developer should be able to:
 
-1. Install DevBox.
-2. Launch DevBox.
-3. Initialize the DevBox environment.
+1. Install WorkBench.
+2. Launch WorkBench.
+3. Initialize the WorkBench environment.
 4. Install or register Apache, PHP, and MariaDB.
 5. View installed PHP versions.
 6. Switch between PHP versions.
@@ -137,8 +137,8 @@ tests/
 Create:
 
 ```text
-cmd/devbox/main.go
-cmd/devbox-cli/main.go
+cmd/workbench/main.go
+cmd/workbench-cli/main.go
 ```
 
 ### Requirements
@@ -150,8 +150,8 @@ cmd/devbox-cli/main.go
 ### Acceptance Criteria
 
 ```bash
-go build ./cmd/devbox
-go build ./cmd/devbox-cli
+go build ./cmd/workbench
+go build ./cmd/workbench-cli
 ```
 
 both succeed.
@@ -195,7 +195,7 @@ database
 
 ## Goal
 
-Create and manage the DevBox environment directory.
+Create and manage the WorkBench environment directory.
 
 ---
 
@@ -206,7 +206,7 @@ Create a path abstraction.
 It must resolve:
 
 ```text
-DevBox Root
+WorkBench Root
 bin/
 active/
 www/
@@ -241,7 +241,7 @@ type Paths interface {
 
 ### Acceptance Criteria
 
-* Paths are resolved from the DevBox root.
+* Paths are resolved from the WorkBench root.
 * Tests do not depend on a developer's machine.
 
 ---
@@ -871,7 +871,7 @@ Never mark a package as valid before checksum verification.
 
 ## Goal
 
-Persist DevBox metadata.
+Persist WorkBench metadata.
 
 ---
 
@@ -974,7 +974,7 @@ The UI must not access internal infrastructure directly.
 
 ## Goal
 
-Build the first usable DevBox interface.
+Build the first usable WorkBench interface.
 
 ---
 
@@ -983,7 +983,7 @@ Build the first usable DevBox interface.
 Command:
 
 ```bash
-devbox status
+workbench status
 ```
 
 Display:
@@ -1001,9 +1001,9 @@ PHP        8.3.30
 Commands:
 
 ```bash
-devbox start apache
-devbox stop apache
-devbox restart apache
+workbench start apache
+workbench stop apache
+workbench restart apache
 ```
 
 Also support MariaDB.
@@ -1015,9 +1015,9 @@ Also support MariaDB.
 Commands:
 
 ```bash
-devbox php list
-devbox php current
-devbox php use 8.3.30
+workbench php list
+workbench php current
+workbench php use 8.3.30
 ```
 
 ---
@@ -1228,7 +1228,7 @@ Phase 1 is complete only when all of the following are true.
 
 ## Environment
 
-* [ ] DevBox root is resolved.
+* [ ] WorkBench root is resolved.
 * [ ] Required directories are created.
 * [ ] Initialization is idempotent.
 * [ ] User data is preserved.

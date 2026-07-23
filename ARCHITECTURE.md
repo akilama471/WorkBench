@@ -1,10 +1,10 @@
 # ARCHITECTURE.md
 
-# DevBox — System Architecture
+# WorkBench — System Architecture
 
-This document defines the technical architecture of DevBox.
+This document defines the technical architecture of WorkBench.
 
-DevBox is a native, lightweight, cross-platform local development environment manager written in Go.
+WorkBench is a native, lightweight, cross-platform local development environment manager written in Go.
 
 This document defines:
 
@@ -22,7 +22,7 @@ Read `AGENTS.md` and `ROADMAP.md` before implementing features.
 
 # 1. Architectural Philosophy
 
-DevBox follows this principle:
+WorkBench follows this principle:
 
 > **A small native application with a strong core engine and modular development components.**
 
@@ -35,7 +35,7 @@ The system must remain:
 * Cross-platform
 * Native
 
-DevBox is **not**:
+WorkBench is **not**:
 
 * A web application
 * A cloud platform
@@ -102,7 +102,7 @@ DevBox is **not**:
 
 # 3. Architectural Layers
 
-DevBox is organized into five conceptual layers.
+WorkBench is organized into five conceptual layers.
 
 ```text
 Layer 1: Presentation
@@ -189,7 +189,7 @@ Core Engine
 
 ## Responsibility
 
-The core engine coordinates DevBox functionality.
+The core engine coordinates WorkBench functionality.
 
 Core managers:
 
@@ -209,7 +209,7 @@ The CLI must be able to run using the core engine without initializing the GUI.
 
 # 7. Layer 4 — Domain Modules
 
-Domain modules represent DevBox concepts.
+Domain modules represent WorkBench concepts.
 
 Primary domain concepts:
 
@@ -283,7 +283,7 @@ Fyne → ApacheService internal fields
 The repository is organized as follows:
 
 ```text
-devbox/
+workbench/
 │
 ├── cmd/
 │
@@ -770,12 +770,12 @@ The filesystem layer must not contain Apache or PHP business logic.
 
 ---
 
-# 24. DevBox Environment
+# 24. WorkBench Environment
 
 The environment is represented by a root directory.
 
 ```text
-DevBox/
+WorkBench/
 ```
 
 The root contains:
@@ -924,7 +924,7 @@ The application should reconcile stale metadata.
 
 # 30. Event Architecture
 
-DevBox uses lightweight internal events.
+WorkBench uses lightweight internal events.
 
 Example:
 
@@ -955,7 +955,7 @@ Events should be used to reduce unnecessary polling.
 
 # 31. Application State
 
-Application state represents the current DevBox state.
+Application state represents the current WorkBench state.
 
 Example:
 
@@ -988,7 +988,7 @@ Core Manager
 Example:
 
 ```text
-devbox php use 8.3.30
+workbench php use 8.3.30
         │
         ▼
 UsePHPVersion()
@@ -1100,7 +1100,7 @@ Do not expose internal stack traces to normal users.
 
 # 37. Security Architecture
 
-DevBox executes external software.
+WorkBench executes external software.
 
 Security boundaries include:
 
@@ -1181,7 +1181,7 @@ ApacheService → random os.WriteFile()
 ## Hardcoded Paths
 
 ```text
-C:\DevBox
+C:\WorkBench
 ```
 
 ## Shell Command Concatenation
@@ -1214,7 +1214,7 @@ when the filesystem does not contain it.
 
 # 40. Final Architecture Principle
 
-The DevBox architecture must preserve this dependency flow:
+The WorkBench architecture must preserve this dependency flow:
 
 ```text
 ┌──────────────┐
@@ -1246,4 +1246,4 @@ The core design rule is:
 
 > **The GUI and CLI are clients. The Go Core Engine is the product.**
 
-Build the architecture so that DevBox can eventually support many runtimes, services, and tools without rewriting the foundation.
+Build the architecture so that WorkBench can eventually support many runtimes, services, and tools without rewriting the foundation.

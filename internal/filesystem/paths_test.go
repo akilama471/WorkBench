@@ -24,7 +24,7 @@ func TestPaths(t *testing.T) {
 		{"Backup", filepath.Join(root, "backup")},
 		{"Packages", filepath.Join(root, "packages")},
 		{"Cache", filepath.Join(root, "cache")},
-		{"Database", filepath.Join(root, "devbox.db")},
+		{"Database", filepath.Join(root, "workbench.db")},
 		{"ApacheBin", filepath.Join(root, "bin", "apache")},
 		{"PHPBin", filepath.Join(root, "bin", "php")},
 		{"MariaDBBin", filepath.Join(root, "bin", "mariadb")},

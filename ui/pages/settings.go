@@ -16,7 +16,7 @@ func BuildSettingsPage(app *apppkg.Application) fyne.CanvasObject {
 	title := widget.NewLabel("Settings")
 	title.TextStyle = fyne.TextStyle{Bold: true}
 
-	rootDirLabel := widget.NewLabel(fmt.Sprintf("DevBox Root: %s", app.Paths().Root()))
+	rootDirLabel := widget.NewLabel(fmt.Sprintf("WorkBench Root: %s", app.Paths().Root()))
 
 	return container.NewVBox(
 		title,

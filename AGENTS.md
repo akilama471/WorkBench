@@ -1,10 +1,10 @@
 # AGENTS.md
 
-# DevBox — AI Coding Agent Instructions
+# WorkBench — AI Coding Agent Instructions
 
-You are an autonomous senior software architect and Go engineer working on **DevBox**.
+You are an autonomous senior software architect and Go engineer working on **WorkBench**.
 
-DevBox is a **free and open-source, native, lightweight, cross-platform local development environment manager** designed as an alternative to Laragon, XAMPP, and WAMP.
+WorkBench is a **free and open-source, native, lightweight, cross-platform local development environment manager** designed as an alternative to Laragon, XAMPP, and WAMP.
 
 Your job is to build this project incrementally, safely, and with production-quality engineering practices.
 
@@ -12,9 +12,9 @@ Your job is to build this project incrementally, safely, and with production-qua
 
 # 1. Project Vision
 
-DevBox is not merely an Apache/PHP/MariaDB bundle.
+WorkBench is not merely an Apache/PHP/MariaDB bundle.
 
-DevBox is a **local development environment orchestration platform**.
+WorkBench is a **local development environment orchestration platform**.
 
 The long-term goal is to provide developers with a simple, fast, lightweight native application for managing local development runtimes, services, and tools.
 
@@ -191,7 +191,7 @@ The first milestone is the **Phase 1 MVP**.
 Phase 1 MUST support:
 
 * Application installation/root detection
-* DevBox directory creation
+* WorkBench directory creation
 * Apache integration
 * PHP integration
 * MariaDB integration
@@ -239,13 +239,13 @@ Use the following high-level architecture:
 
 ```text
 ┌──────────────────────────────────────────────┐
-│                  DevBox GUI                  │
+│                  WorkBench GUI                  │
 │                   Fyne                       │
 └──────────────────────┬───────────────────────┘
                        │
                        ▼
 ┌──────────────────────────────────────────────┐
-│              DevBox Core Engine              │
+│              WorkBench Core Engine              │
 │                    Go                        │
 │                                              │
 │  Service Manager                             │
@@ -304,13 +304,13 @@ os/exec
 Use this structure unless the repository already contains a well-designed equivalent.
 
 ```text
-devbox/
+workbench/
 │
 ├── cmd/
-│   ├── devbox/
+│   ├── workbench/
 │   │   └── main.go
 │   │
-│   └── devbox-cli/
+│   └── workbench-cli/
 │       └── main.go
 │
 ├── internal/
@@ -428,10 +428,10 @@ Do not create random top-level directories.
 
 # 7. Application Root Directory
 
-The default DevBox environment root should contain:
+The default WorkBench environment root should contain:
 
 ```text
-DevBox/
+WorkBench/
 │
 ├── bin/
 │   ├── apache/
@@ -468,7 +468,7 @@ DevBox/
 │
 ├── cache/
 │
-└── devbox.db
+└── workbench.db
 ```
 
 ## Directory Rules
@@ -962,21 +962,21 @@ The CLI must use the same core engine as the GUI.
 Required initial commands:
 
 ```bash
-devbox status
-devbox start apache
-devbox stop apache
-devbox restart apache
-devbox start mariadb
-devbox stop mariadb
-devbox php list
-devbox php current
-devbox php use 8.3.30
+workbench status
+workbench start apache
+workbench stop apache
+workbench restart apache
+workbench start mariadb
+workbench stop mariadb
+workbench php list
+workbench php current
+workbench php use 8.3.30
 ```
 
 Expected:
 
 ```bash
-devbox status
+workbench status
 ```
 
 Example:
@@ -1503,15 +1503,15 @@ A feature is not complete until:
 
 # 36. Final Product Philosophy
 
-DevBox must be:
+WorkBench must be:
 
 > **Fast. Native. Simple. Modular. Developer-focused.**
 
-Do not turn DevBox into an enterprise management platform.
+Do not turn WorkBench into an enterprise management platform.
 
-Do not turn DevBox into a cloud platform.
+Do not turn WorkBench into a cloud platform.
 
-Do not turn DevBox into a web application.
+Do not turn WorkBench into a web application.
 
 Build a powerful local development tool with a small, understandable, maintainable codebase.
 

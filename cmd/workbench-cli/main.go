@@ -52,28 +52,29 @@ func main() {
 }
 
 func resolveRootDir() string {
-	if envRoot := os.Getenv("DEVBOX_ROOT"); envRoot != "" {
+	if envRoot := os.Getenv("WORKBENCH_ROOT_ROOT"); envRoot != "" {
 		return envRoot
 	}
 
-	home, err := os.UserHomeDir()
-	if err != nil {
-		home = "."
+	exe, err := os.Executable()
+	if err == nil {
+		return filepath.Dir(exe)
 	}
-	return filepath.Join(home, "DevBox")
+
+	return "."
 }
 
 func printUsage() {
-	fmt.Println("DevBox - Local Development Environment Manager")
+	fmt.Println("WorkBench - Local Development Environment Manager")
 	fmt.Println()
 	fmt.Println("Usage:")
-	fmt.Println("  devbox status                     Show status of all services")
-	fmt.Println("  devbox start <service>            Start a service (apache, mariadb)")
-	fmt.Println("  devbox stop <service>             Stop a service (apache, mariadb)")
-	fmt.Println("  devbox restart <service>          Restart a service (apache, mariadb)")
-	fmt.Println("  devbox php list                   List installed PHP versions")
-	fmt.Println("  devbox php current                Show active PHP version")
-	fmt.Println("  devbox php use <version>          Switch active PHP version")
+	fmt.Println("  workbench status                     Show status of all services")
+	fmt.Println("  workbench start <service>            Start a service (apache, mariadb)")
+	fmt.Println("  workbench stop <service>             Stop a service (apache, mariadb)")
+	fmt.Println("  workbench restart <service>          Restart a service (apache, mariadb)")
+	fmt.Println("  workbench php list                   List installed PHP versions")
+	fmt.Println("  workbench php current                Show active PHP version")
+	fmt.Println("  workbench php use <version>          Switch active PHP version")
 	fmt.Println()
 	fmt.Println("Services: apache, mariadb")
 }
@@ -106,7 +107,7 @@ func handleStatus(application *app.Application) {
 
 func handleServiceCommand(application *app.Application, action string, args []string) {
 	if len(args) == 0 {
-		fmt.Fprintf(os.Stderr, "Usage: devbox %s <service>\n", action)
+		fmt.Fprintf(os.Stderr, "Usage: workbench %s <service>\n", action)
 		os.Exit(1)
 	}
 
@@ -136,7 +137,7 @@ func handleServiceCommand(application *app.Application, action string, args []st
 
 func handlePHPCommand(application *app.Application, args []string) {
 	if len(args) == 0 {
-		fmt.Fprintf(os.Stderr, "Usage: devbox php <list|current|use> [version]\n")
+		fmt.Fprintf(os.Stderr, "Usage: workbench php <list|current|use> [version]\n")
 		os.Exit(1)
 	}
 
@@ -172,7 +173,7 @@ func handlePHPCommand(application *app.Application, args []string) {
 		}
 	case "use":
 		if len(args) < 2 {
-			fmt.Fprintf(os.Stderr, "Usage: devbox php use <version>\n")
+			fmt.Fprintf(os.Stderr, "Usage: workbench php use <version>\n")
 			os.Exit(1)
 		}
 		if err := application.SwitchPHPVersion(args[1]); err != nil {
@@ -182,7 +183,7 @@ func handlePHPCommand(application *app.Application, args []string) {
 		fmt.Printf("PHP version switched to %s.\n", args[1])
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown PHP command: %s\n", args[0])
-		fmt.Fprintf(os.Stderr, "Usage: devbox php <list|current|use> [version]\n")
+		fmt.Fprintf(os.Stderr, "Usage: workbench php <list|current|use> [version]\n")
 		os.Exit(1)
 	}
 }

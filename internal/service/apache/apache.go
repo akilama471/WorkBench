@@ -233,7 +233,7 @@ func (s *Service) ensureConfig() error {
 	content = replaceConfigValue(content, "Define SRVROOT", fmt.Sprintf(`Define SRVROOT "%s"`, filepath.ToSlash(binDir)))
 	content = replaceConfigValue(content, "ServerRoot", fmt.Sprintf(`ServerRoot "%s"`, filepath.ToSlash(binDir)))
 	content = replaceConfigValue(content, "DocumentRoot", fmt.Sprintf(`DocumentRoot "%s"`, filepath.ToSlash(filepath.Join(wwwDir, "www"))))
-	content = replaceConfigValueDir(content, `<Directory "${SRVROOT}/htdocs">`, fmt.Sprintf(`<Directory "%s">`, filepath.ToSlash(filepath.Join(wwwDir, "www"))))
+	content = replaceDocumentRootDirectory(content, fmt.Sprintf(`<Directory "%s">`, filepath.ToSlash(filepath.Join(wwwDir, "www"))))
 	content = replaceConfigLine(content, "ErrorLog", fmt.Sprintf(`ErrorLog "%s"`, filepath.ToSlash(filepath.Join(logsDir, "error.log"))))
 	content = replaceConfigLine(content, "CustomLog", fmt.Sprintf(`CustomLog "%s" common`, filepath.ToSlash(filepath.Join(logsDir, "access.log"))))
 
@@ -241,8 +241,40 @@ func (s *Service) ensureConfig() error {
 		content += "\nServerName localhost\n"
 	}
 
+	content = removeConfigLinesContaining(content, "etc/apache2/alias")
+	content = removeConfigLinesContaining(content, "etc/apache2/sites-enabled")
+	content = removeConfigLinesContaining(content, "etc/apache2/httpd-ssl.conf")
+	content = removeConfigLinesContaining(content, "etc/apache2/mod_php.conf")
+
 	if err := os.MkdirAll(etcDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create etc/apache directory: %w", err)
+	}
+
+	sitesEnabledDir := filepath.Join(etcDir, "sites-enabled")
+	if err := os.MkdirAll(sitesEnabledDir, 0o755); err != nil {
+		return fmt.Errorf("failed to create sites-enabled directory: %w", err)
+	}
+
+	defaultSitePath := filepath.Join(sitesEnabledDir, "00-default.conf")
+	if _, err := os.Stat(defaultSitePath); os.IsNotExist(err) {
+		defaultSite := fmt.Sprintf(`<VirtualHost *:80>
+    DocumentRoot "%s"
+    ServerName localhost
+    <Directory "%s">
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
+`, filepath.ToSlash(filepath.Join(wwwDir, "www")), filepath.ToSlash(filepath.Join(wwwDir, "www")))
+		if err := os.WriteFile(defaultSitePath, []byte(defaultSite), 0o644); err != nil {
+			return fmt.Errorf("failed to write 00-default.conf: %w", err)
+		}
+	}
+
+	includeSites := fmt.Sprintf(`IncludeOptional "%s/*.conf"`, filepath.ToSlash(sitesEnabledDir))
+	if !strings.Contains(content, includeSites) {
+		content += "\n" + includeSites + "\n"
 	}
 
 	if err := os.WriteFile(filepath.Join(etcDir, "httpd.conf"), []byte(content), 0o644); err != nil {
@@ -362,4 +394,38 @@ func removeConfigLines(content, directive string) string {
 		result = append(result, line)
 	}
 	return strings.Join(result, "\n")
+}
+
+func removeConfigLinesContaining(content, search string) string {
+	lines := strings.Split(content, "\n")
+	var result []string
+	for _, line := range lines {
+		if strings.Contains(line, search) {
+			continue
+		}
+		result = append(result, line)
+	}
+	return strings.Join(result, "\n")
+}
+
+func replaceDocumentRootDirectory(content, newValue string) string {
+	lines := strings.Split(content, "\n")
+	docRootIdx := -1
+	for i, line := range lines {
+		if strings.HasPrefix(strings.TrimSpace(line), "DocumentRoot") {
+			docRootIdx = i
+			break
+		}
+	}
+
+	if docRootIdx != -1 {
+		for i := docRootIdx; i < len(lines); i++ {
+			if strings.HasPrefix(strings.TrimSpace(lines[i]), "<Directory") {
+				lines[i] = newValue
+				break
+			}
+		}
+	}
+
+	return strings.Join(lines, "\n")
 }

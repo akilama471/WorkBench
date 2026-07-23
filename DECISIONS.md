@@ -1,8 +1,8 @@
 # DECISIONS.md
 
-# DevBox — Architecture Decision Record
+# WorkBench — Architecture Decision Record
 
-This document records important architectural and product decisions made for DevBox.
+This document records important architectural and product decisions made for WorkBench.
 
 The purpose of this document is to prevent future contributors and AI coding agents from repeatedly reconsidering already-decided architectural choices without a strong reason.
 
@@ -32,11 +32,11 @@ Before changing a decision:
 
 ## Decision
 
-DevBox will be implemented primarily using **Go**.
+WorkBench will be implemented primarily using **Go**.
 
 ## Context
 
-DevBox must be:
+WorkBench must be:
 
 * Fast.
 * Lightweight.
@@ -71,7 +71,7 @@ However, for this project:
 
 * Development complexity is higher.
 * The project requires rapid iteration.
-* Go provides sufficient performance for the DevBox use case.
+* Go provides sufficient performance for the WorkBench use case.
 
 ### C++
 
@@ -85,7 +85,7 @@ However:
 
 ## Consequence
 
-DevBox will use Go for:
+WorkBench will use Go for:
 
 * Core engine.
 * CLI.
@@ -102,7 +102,7 @@ DevBox will use Go for:
 
 ## Decision
 
-DevBox will use **Fyne** for the desktop GUI.
+WorkBench will use **Fyne** for the desktop GUI.
 
 ## Context
 
@@ -168,7 +168,7 @@ The GUI must not introduce:
 
 ## Decision
 
-The DevBox Core Engine is the primary product.
+The WorkBench Core Engine is the primary product.
 
 The GUI and CLI are clients of the core engine.
 
@@ -187,7 +187,7 @@ CLI ───────┘
 
 ## Context
 
-DevBox must provide both a GUI and CLI.
+WorkBench must provide both a GUI and CLI.
 
 Duplicating logic between the GUI and CLI would create inconsistent behavior.
 
@@ -210,7 +210,7 @@ The GUI and CLI must not implement separate versions of the same business logic.
 
 ## Decision
 
-DevBox will not use web technology as the desktop GUI architecture.
+WorkBench will not use web technology as the desktop GUI architecture.
 
 ## Rejected Technologies
 
@@ -222,7 +222,7 @@ DevBox will not use web technology as the desktop GUI architecture.
 
 ## Context
 
-The primary goal of DevBox is to provide a fast and lightweight alternative to existing local development environment managers.
+The primary goal of WorkBench is to provide a fast and lightweight alternative to existing local development environment managers.
 
 A web-based desktop architecture introduces unnecessary runtime overhead.
 
@@ -252,7 +252,7 @@ Mailpit
 
 ## Context
 
-DevBox will support more services in the future.
+WorkBench will support more services in the future.
 
 The system must not contain service-specific conditionals throughout the core.
 
@@ -358,7 +358,7 @@ PHP version switching must not:
 
 ## Decision
 
-DevBox will track the active PHP version separately.
+WorkBench will track the active PHP version separately.
 
 Example:
 
@@ -411,7 +411,7 @@ Failure must trigger rollback.
 
 ## Context
 
-A failed PHP switch must not leave DevBox in an inconsistent state.
+A failed PHP switch must not leave WorkBench in an inconsistent state.
 
 ## Consequence
 
@@ -462,7 +462,7 @@ Installing or updating MariaDB must not automatically delete or overwrite the Ma
 
 ## Decision
 
-DevBox must treat the following directories as user-sensitive:
+WorkBench must treat the following directories as user-sensitive:
 
 ```text
 www/
@@ -472,7 +472,7 @@ backup/
 
 ## Consequence
 
-DevBox must never automatically delete these directories during:
+WorkBench must never automatically delete these directories during:
 
 * Service operations.
 * Runtime switching.
@@ -483,17 +483,17 @@ Any future destructive operation must require explicit user intent and appropria
 
 ---
 
-# ADR-012 — Use SQLite for DevBox Metadata
+# ADR-012 — Use SQLite for WorkBench Metadata
 
 **Status:** Accepted
 
 ## Decision
 
-DevBox will use SQLite for local metadata.
+WorkBench will use SQLite for local metadata.
 
 ## Context
 
-DevBox needs to store:
+WorkBench needs to store:
 
 * Installed package metadata.
 * Settings.
@@ -536,7 +536,7 @@ If SQLite says:
 PHP 8.3.30 is installed
 ```
 
-but the installation directory does not exist, DevBox must treat PHP 8.3.30 as unavailable.
+but the installation directory does not exist, WorkBench must treat PHP 8.3.30 as unavailable.
 
 ## Context
 
@@ -546,7 +546,7 @@ Metadata can become stale.
 
 ## Consequence
 
-DevBox must be able to detect and reconcile stale metadata.
+WorkBench must be able to detect and reconcile stale metadata.
 
 ---
 
@@ -588,13 +588,13 @@ A failed package installation must not corrupt an existing valid installation.
 
 ## Decision
 
-DevBox must verify package checksums before installation.
+WorkBench must verify package checksums before installation.
 
 SHA-256 is the initial supported checksum algorithm.
 
 ## Context
 
-DevBox will eventually download software packages.
+WorkBench will eventually download software packages.
 
 Downloaded files must not be blindly trusted.
 
@@ -610,7 +610,7 @@ A package that fails checksum validation must not be installed.
 
 ## Decision
 
-DevBox must not build shell commands by concatenating user input.
+WorkBench must not build shell commands by concatenating user input.
 
 Bad:
 
@@ -624,7 +624,7 @@ Process arguments must be passed as structured arguments.
 
 ## Context
 
-DevBox executes external software.
+WorkBench executes external software.
 
 Unsafe shell command construction creates unnecessary security risks.
 
@@ -642,7 +642,7 @@ Services must not implement unsafe shell execution.
 
 ## Decision
 
-DevBox will use a Process Manager abstraction.
+WorkBench will use a Process Manager abstraction.
 
 ## Context
 
@@ -676,7 +676,7 @@ process_darwin.go
 
 ## Context
 
-DevBox is cross-platform.
+WorkBench is cross-platform.
 
 Operating system behavior differs.
 
@@ -729,7 +729,7 @@ The Go standard library should be preferred where it provides suitable functiona
 
 ## Context
 
-DevBox must remain lightweight.
+WorkBench must remain lightweight.
 
 Unnecessary dependencies increase:
 
@@ -749,11 +749,11 @@ A third-party dependency must have a clear justification.
 
 ## Decision
 
-DevBox must not make unnecessary network requests during startup.
+WorkBench must not make unnecessary network requests during startup.
 
 ## Context
 
-DevBox is a local development environment manager.
+WorkBench is a local development environment manager.
 
 Startup should be fast and predictable.
 
@@ -769,11 +769,11 @@ Package registry checks and updates must be explicit user actions or controlled 
 
 ## Decision
 
-DevBox will not include telemetry in the initial product.
+WorkBench will not include telemetry in the initial product.
 
 ## Context
 
-DevBox is a free and open-source developer tool.
+WorkBench is a free and open-source developer tool.
 
 The initial priority is trust, simplicity, and privacy.
 
@@ -791,7 +791,7 @@ Any future telemetry proposal requires a separate architectural decision.
 
 ## Decision
 
-DevBox should use application state and internal events where appropriate instead of continuously polling the filesystem or processes.
+WorkBench should use application state and internal events where appropriate instead of continuously polling the filesystem or processes.
 
 ## Context
 
@@ -860,7 +860,7 @@ ngrok
 
 ## Decision
 
-DevBox prioritizes:
+WorkBench prioritizes:
 
 ```text
 Speed
@@ -872,7 +872,7 @@ over the number of supported tools.
 
 ## Context
 
-The purpose of DevBox is to simplify local development environments.
+The purpose of WorkBench is to simplify local development environments.
 
 A large number of poorly integrated features would contradict the product goal.
 
@@ -880,7 +880,7 @@ A large number of poorly integrated features would contradict the product goal.
 
 A feature should not be added only because another environment manager has it.
 
-The feature must solve a real developer problem and fit the DevBox architecture.
+The feature must solve a real developer problem and fit the WorkBench architecture.
 
 ---
 
@@ -907,7 +907,7 @@ Do not silently reverse an accepted decision.
 
 # 27. Final Architectural Principle
 
-DevBox must remain:
+WorkBench must remain:
 
 > **A small native core with modular services and runtimes.**
 

@@ -53,7 +53,7 @@ func (p *Paths) Cache() string {
 }
 
 func (p *Paths) Database() string {
-	return filepath.Join(p.root, "devbox.db")
+	return filepath.Join(p.root, "workbench.db")
 }
 
 func (p *Paths) ApacheBin(version string) string {

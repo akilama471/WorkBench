@@ -1,6 +1,6 @@
 # SPEC.md
 
-# DevBox — Product Specification
+# WorkBench — Product Specification
 
 ## Version
 
@@ -14,9 +14,9 @@ Implementation Specification
 
 # 1. Product Definition
 
-DevBox is a free and open-source, native, lightweight, cross-platform local development environment manager.
+WorkBench is a free and open-source, native, lightweight, cross-platform local development environment manager.
 
-DevBox allows developers to install, manage, and use local development software from one simple application.
+WorkBench allows developers to install, manage, and use local development software from one simple application.
 
 Phase 1 focuses on:
 
@@ -24,7 +24,7 @@ Phase 1 focuses on:
 * PHP
 * MariaDB
 
-DevBox must provide both:
+WorkBench must provide both:
 
 * Native GUI
 * CLI
@@ -35,7 +35,7 @@ Both interfaces must use the same Go core engine.
 
 # 2. Product Goals
 
-DevBox must be:
+WorkBench must be:
 
 * Fast.
 * Lightweight.
@@ -66,7 +66,7 @@ The user should not need to understand complex server configuration to use the b
 
 ### Environment
 
-* DevBox directory structure.
+* WorkBench directory structure.
 * Service management.
 * PHP version management.
 * Basic package metadata.
@@ -102,13 +102,13 @@ The following are explicitly excluded from Phase 1:
 
 # 4. First Launch Behavior
 
-When DevBox starts for the first time:
+When WorkBench starts for the first time:
 
 ```text id="c71f7k"
-Start DevBox
+Start WorkBench
       │
       ▼
-Resolve DevBox Root
+Resolve WorkBench Root
       │
       ▼
 Initialize Environment
@@ -130,9 +130,9 @@ Show Dashboard
 
 ## 4.1 First Launch Requirements
 
-DevBox must:
+WorkBench must:
 
-1. Resolve the DevBox root directory.
+1. Resolve the WorkBench root directory.
 2. Create missing directories.
 3. Preserve existing directories.
 4. Initialize SQLite.
@@ -142,13 +142,13 @@ DevBox must:
 8. Detect MariaDB installation.
 9. Display the dashboard.
 
-If initialization fails, DevBox must show a clear error.
+If initialization fails, WorkBench must show a clear error.
 
 ---
 
 ## 4.2 First Launch Must Not
 
-DevBox must not:
+WorkBench must not:
 
 * Delete user files.
 * Delete `www/`.
@@ -160,14 +160,14 @@ DevBox must not:
 
 ---
 
-# 5. DevBox Environment
+# 5. WorkBench Environment
 
-DevBox uses a root directory.
+WorkBench uses a root directory.
 
 The root must contain:
 
 ```text id="a5i1bc"
-DevBox/
+WorkBench/
 │
 ├── bin/
 ├── active/
@@ -228,7 +228,7 @@ Default web root.
 
 The user may place web projects here.
 
-DevBox must not automatically delete contents of this directory.
+WorkBench must not automatically delete contents of this directory.
 
 ---
 
@@ -269,7 +269,7 @@ Example:
 
 ```text id="0c7o8k"
 logs/
-├── devbox.log
+├── workbench.log
 ├── apache/
 └── mariadb/
 ```
@@ -280,7 +280,7 @@ logs/
 
 Contains user or system backups.
 
-DevBox must not automatically delete backup data.
+WorkBench must not automatically delete backup data.
 
 ---
 
@@ -320,7 +320,7 @@ Example:
 
 ```text id="3g4vkg"
 ┌──────────────────────────────────────────────┐
-│ DevBox                                       │
+│ WorkBench                                       │
 ├──────────────────────────────────────────────┤
 │ Apache       ● Running        [Stop]          │
 │ MariaDB      ● Stopped        [Start]         │
@@ -355,7 +355,7 @@ Error
 
 ### Unknown
 
-DevBox cannot determine the current service state.
+WorkBench cannot determine the current service state.
 
 ### Stopped
 
@@ -363,7 +363,7 @@ The service is not running.
 
 ### Starting
 
-DevBox is attempting to start the service.
+WorkBench is attempting to start the service.
 
 ### Running
 
@@ -371,7 +371,7 @@ The service process is running and has passed basic verification.
 
 ### Stopping
 
-DevBox is attempting to stop the service.
+WorkBench is attempting to stop the service.
 
 ### Error
 
@@ -389,7 +389,7 @@ Apache is installed under:
 bin/apache/<version>/
 ```
 
-DevBox must detect whether Apache is installed.
+WorkBench must detect whether Apache is installed.
 
 If Apache is not installed, the UI must display:
 
@@ -407,7 +407,7 @@ When the user selects:
 Start Apache
 ```
 
-DevBox must:
+WorkBench must:
 
 1. Confirm Apache is installed.
 2. Resolve the Apache executable.
@@ -440,7 +440,7 @@ When the user selects:
 Stop Apache
 ```
 
-DevBox must:
+WorkBench must:
 
 1. Detect the Apache process.
 2. Request process termination.
@@ -504,7 +504,7 @@ When the user selects:
 Start MariaDB
 ```
 
-DevBox must:
+WorkBench must:
 
 1. Confirm MariaDB is installed.
 2. Resolve the executable.
@@ -518,14 +518,14 @@ DevBox must:
 
 ## 10.3 Stop MariaDB
 
-DevBox must:
+WorkBench must:
 
 1. Detect the MariaDB process.
 2. Request termination.
 3. Wait for termination.
 4. Verify the process has stopped.
 
-DevBox must not delete MariaDB data.
+WorkBench must not delete MariaDB data.
 
 ---
 
@@ -563,7 +563,7 @@ Example:
 
 # 12. PHP Version Discovery
 
-DevBox must scan:
+WorkBench must scan:
 
 ```text id="1z9n3q"
 bin/php/
@@ -607,7 +607,7 @@ When the user selects:
 PHP 8.2.20
 ```
 
-DevBox must:
+WorkBench must:
 
 1. Validate that PHP 8.2.20 exists.
 2. Validate the PHP installation.
@@ -669,7 +669,7 @@ The user must not manually copy PHP files between versions.
 The CLI executable is:
 
 ```text id="v2z7wr"
-devbox-cli
+workbench-cli
 ```
 
 The CLI should provide a user-friendly command structure.
@@ -681,7 +681,7 @@ The CLI should provide a user-friendly command structure.
 Command:
 
 ```bash id="e8v8a8"
-devbox status
+workbench status
 ```
 
 Example output:
@@ -697,8 +697,8 @@ PHP        8.3.30
 ## 16.2 Start
 
 ```bash id="xx6lvr"
-devbox start apache
-devbox start mariadb
+workbench start apache
+workbench start mariadb
 ```
 
 ---
@@ -706,8 +706,8 @@ devbox start mariadb
 ## 16.3 Stop
 
 ```bash id="n8q0q5"
-devbox stop apache
-devbox stop mariadb
+workbench stop apache
+workbench stop mariadb
 ```
 
 ---
@@ -715,8 +715,8 @@ devbox stop mariadb
 ## 16.4 Restart
 
 ```bash id="x5lj0c"
-devbox restart apache
-devbox restart mariadb
+workbench restart apache
+workbench restart mariadb
 ```
 
 ---
@@ -724,7 +724,7 @@ devbox restart mariadb
 ## 16.5 PHP List
 
 ```bash id="q4jz0u"
-devbox php list
+workbench php list
 ```
 
 Example:
@@ -742,7 +742,7 @@ Example:
 ## 16.6 PHP Current
 
 ```bash id="hrwqvr"
-devbox php current
+workbench php current
 ```
 
 Example:
@@ -756,7 +756,7 @@ Example:
 ## 16.7 PHP Use
 
 ```bash id="5k4y57"
-devbox php use 8.2.20
+workbench php use 8.2.20
 ```
 
 Success:
@@ -868,14 +868,14 @@ Do not display stack traces.
 Detailed technical information may be written to:
 
 ```text id="r9g4v0"
-logs/devbox.log
+logs/workbench.log
 ```
 
 ---
 
 # 20. Data Safety Specification
 
-DevBox must prioritize user data safety.
+WorkBench must prioritize user data safety.
 
 The following directories must never be automatically deleted:
 
@@ -885,7 +885,7 @@ data/
 backup/
 ```
 
-DevBox must not:
+WorkBench must not:
 
 * Delete a project during service operations.
 * Delete MariaDB data during upgrades.
@@ -922,7 +922,7 @@ Final Installation Remains Unchanged
 
 # 22. Startup Performance
 
-DevBox should start quickly.
+WorkBench should start quickly.
 
 The application must avoid:
 
@@ -937,7 +937,7 @@ The exact startup performance target may be defined after the first working prot
 
 # 23. Cross-Platform Behavior
 
-DevBox must preserve the same product behavior on:
+WorkBench must preserve the same product behavior on:
 
 ```text id="j4o4x3"
 Windows
@@ -963,7 +963,7 @@ must mean the same thing on all supported platforms.
 
 Phase 1 is complete when a developer can:
 
-1. Start DevBox.
+1. Start WorkBench.
 2. See the environment dashboard.
 3. See Apache status.
 4. See MariaDB status.
@@ -984,11 +984,11 @@ Phase 1 is complete when a developer can:
 
 # 25. Product Principle
 
-The most important DevBox product principle is:
+The most important WorkBench product principle is:
 
 > **A developer should be able to manage their local development environment without fighting the environment manager.**
 
-DevBox should make local development infrastructure:
+WorkBench should make local development infrastructure:
 
 ```text id="o5c4x3"
 Simple

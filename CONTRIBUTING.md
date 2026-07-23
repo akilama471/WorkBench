@@ -1,12 +1,12 @@
 # CONTRIBUTING.md
 
-# Contributing to DevBox
+# Contributing to WorkBench
 
-Thank you for your interest in contributing to **DevBox**.
+Thank you for your interest in contributing to **WorkBench**.
 
-DevBox is a free and open-source, native, lightweight, cross-platform local development environment manager built with Go.
+WorkBench is a free and open-source, native, lightweight, cross-platform local development environment manager built with Go.
 
-The goal of DevBox is to provide developers with a fast, simple, and native alternative to tools such as Laragon, XAMPP, and WAMP.
+The goal of WorkBench is to provide developers with a fast, simple, and native alternative to tools such as Laragon, XAMPP, and WAMP.
 
 Every contribution is welcome, including:
 
@@ -31,13 +31,13 @@ These files define the project's engineering rules and architecture.
 
 # 1. Project Philosophy
 
-DevBox follows these principles:
+WorkBench follows these principles:
 
 > **Native. Fast. Simple. Modular. Developer-focused.**
 
 Contributions should preserve these principles.
 
-DevBox is intentionally not a web application.
+WorkBench is intentionally not a web application.
 
 Do not introduce:
 
@@ -62,7 +62,7 @@ Before creating a pull request:
 5. Avoid duplicating existing work.
 6. Confirm that your change fits the project scope.
 
-If you are unsure whether an idea fits DevBox, open a discussion or issue before implementing a large change.
+If you are unsure whether an idea fits WorkBench, open a discussion or issue before implementing a large change.
 
 ---
 
@@ -89,7 +89,7 @@ Future development will include:
 The project follows this structure:
 
 ```text id="w55wy5"
-devbox/
+workbench/
 │
 ├── cmd/
 ├── internal/
@@ -567,7 +567,7 @@ Do not use personal machine paths.
 Bad:
 
 ```text id="oqpdyv"
-C:\Users\John\Desktop\DevBox
+C:\Users\John\Desktop\WorkBench
 ```
 
 ---
@@ -698,7 +698,7 @@ Before opening an issue, search existing issues.
 
 A good bug report should include:
 
-* DevBox version or commit.
+* WorkBench version or commit.
 * Operating system.
 * Architecture.
 * Steps to reproduce.
@@ -743,7 +743,7 @@ Feature requests should explain:
 
 1. The problem.
 2. The proposed solution.
-3. Why it fits DevBox.
+3. Why it fits WorkBench.
 4. Possible architectural impact.
 
 Do not only write:
@@ -785,19 +785,19 @@ Maintainers should prioritize:
 
 Do not merge features only because they are technically interesting.
 
-DevBox must remain focused.
+WorkBench must remain focused.
 
 ---
 
 # 25. Project Direction
 
-DevBox is built around this principle:
+WorkBench is built around this principle:
 
 > **The core engine is the product. The GUI and CLI are interfaces to the core engine.**
 
 All contributions should strengthen this architecture.
 
-The long-term goal is to make DevBox:
+The long-term goal is to make WorkBench:
 
 ```text id="m5ssg0"
 Fast
@@ -808,4 +808,4 @@ Modular
 Developer-Friendly
 ```
 
-Thank you for contributing to DevBox.
+Thank you for contributing to WorkBench.

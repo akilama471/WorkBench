@@ -13,7 +13,7 @@ func OpenLogFile(logsDir string) (*os.File, error) {
 		return nil, fmt.Errorf("failed to create logs directory %s: %w", logsDir, err)
 	}
 
-	logPath := filepath.Join(logsDir, "devbox.log")
+	logPath := filepath.Join(logsDir, "workbench.log")
 	f, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open log file %s: %w", logPath, err)

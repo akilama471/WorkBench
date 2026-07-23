@@ -32,7 +32,7 @@ func main() {
 	}
 
 	fyneApp := app.New()
-	window := fyneApp.NewWindow("DevBox")
+	window := fyneApp.NewWindow("WorkBench")
 	window.Resize(fyne.NewSize(600, 400))
 
 	content := buildDashboard(application)
@@ -42,7 +42,7 @@ func main() {
 }
 
 func buildDashboard(application *apppkg.Application) fyne.CanvasObject {
-	title := widget.NewLabel("DevBox Dashboard")
+	title := widget.NewLabel("WorkBench Dashboard")
 	title.TextStyle = fyne.TextStyle{Bold: true}
 
 	apacheStatus := widget.NewLabel("Apache   -- Unknown")
@@ -151,13 +151,14 @@ func buildDashboard(application *apppkg.Application) fyne.CanvasObject {
 }
 
 func resolveRootDir() string {
-	if envRoot := os.Getenv("DEVBOX_ROOT"); envRoot != "" {
+	if envRoot := os.Getenv("WORKBENCH_ROOT_ROOT"); envRoot != "" {
 		return envRoot
 	}
 
-	home, err := os.UserHomeDir()
-	if err != nil {
-		home = "."
+	exe, err := os.Executable()
+	if err == nil {
+		return filepath.Dir(exe)
 	}
-	return filepath.Join(home, "DevBox")
+
+	return "."
 }
