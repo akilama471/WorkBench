@@ -294,6 +294,10 @@ func (s *Service) AccessLogPath() string {
 }
 
 func (s *Service) ConfigurePHP(phpVersionPath string) error {
+	if err := s.ensureConfig(); err != nil {
+		return fmt.Errorf("failed to prepare Apache config: %w", err)
+	}
+
 	conf := s.resolveConfig()
 	if conf == "" {
 		return fmt.Errorf("Apache configuration file not found")
@@ -345,6 +349,13 @@ func (s *Service) updatePHPModule(confPath, phpVersionPath string) error {
 	}
 	if !foundIniDir {
 		result = append(result, fmt.Sprintf(`PHPIniDir "%s"`, filepath.ToSlash(phpIniDir)))
+	}
+	
+	if !strings.Contains(content, "application/x-httpd-php") {
+		result = append(result, `AddType application/x-httpd-php .php`)
+	}
+	if !strings.Contains(content, "DirectoryIndex index.php") {
+		result = append(result, `DirectoryIndex index.php index.html`)
 	}
 
 	return os.WriteFile(confPath, []byte(strings.Join(result, "\n")), 0o644)

@@ -52,7 +52,7 @@ func main() {
 }
 
 func resolveRootDir() string {
-	if envRoot := os.Getenv("WORKBENCH_ROOT_ROOT"); envRoot != "" {
+	if envRoot := os.Getenv("WORKBENCH_ROOT"); envRoot != "" {
 		return envRoot
 	}
 

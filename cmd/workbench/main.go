@@ -151,7 +151,7 @@ func buildDashboard(application *apppkg.Application) fyne.CanvasObject {
 }
 
 func resolveRootDir() string {
-	if envRoot := os.Getenv("WORKBENCH_ROOT_ROOT"); envRoot != "" {
+	if envRoot := os.Getenv("WORKBENCH_ROOT"); envRoot != "" {
 		return envRoot
 	}
 

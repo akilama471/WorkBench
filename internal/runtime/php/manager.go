@@ -60,6 +60,15 @@ func (m *Manager) SwitchVersion(version string) error {
 }
 
 func (m *Manager) PHPBinaryPath(version string) string {
+	versions, err := m.ListVersions()
+	if err == nil {
+		for _, v := range versions {
+			if v.Version == version {
+				return filepath.Join(v.Path, "php.exe")
+			}
+		}
+	}
+	// Fallback to assuming the directory is just the version
 	return filepath.Join(m.paths.PHPBin(version), "php.exe")
 }
 
@@ -71,7 +80,7 @@ func (m *Manager) ActivePHPBinaryPath() (string, error) {
 	if v == nil {
 		return "", fmt.Errorf("no active PHP version")
 	}
-	return m.PHPBinaryPath(v.Version), nil
+	return filepath.Join(v.Path, "php.exe"), nil
 }
 
 func compareVersions(a, b string) int {

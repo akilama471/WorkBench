@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/akilama471/WorkBench/internal/config"
 	"github.com/akilama471/WorkBench/internal/core"
@@ -148,6 +149,20 @@ func (a *Application) Close() error {
 
 func (a *Application) StartService(id string) error {
 	a.log.Info(logger.CategoryService, "starting service", "id", id)
+
+	if id == "apache" {
+		if phpVersion, err := a.CurrentPHPVersion(); err == nil && phpVersion != "" && phpVersion != "none" {
+			if apacheSvc, err := a.ServiceManager.GetService("apache"); err == nil {
+				if configurable, ok := apacheSvc.(interface{ ConfigurePHP(string) error }); ok {
+					phpPath := filepath.Dir(a.RuntimeManager.PHP().PHPBinaryPath(phpVersion))
+					if confErr := configurable.ConfigurePHP(phpPath); confErr != nil {
+						a.log.Warn(logger.CategoryService, "failed to auto-configure Apache for PHP before starting", "error", confErr)
+					}
+				}
+			}
+		}
+	}
+
 	err := a.ServiceManager.Start(id)
 	if err == nil {
 		a.events.Publish(events.Event{Type: events.ServiceStarted, Payload: id})
@@ -170,11 +185,15 @@ func (a *Application) StopService(id string) error {
 
 func (a *Application) RestartService(id string) error {
 	a.log.Info(logger.CategoryService, "restarting service", "id", id)
-	err := a.ServiceManager.Restart(id)
+	
+	if err := a.StopService(id); err != nil && err.Error() != "service is not running" && !strings.Contains(err.Error(), "service is not running") {
+		// We ignore "not running" errors because we just want to ensure it's stopped before starting
+		a.log.Warn(logger.CategoryService, "warning during stop phase of restart", "error", err)
+	}
+
+	err := a.StartService(id)
 	if err == nil {
 		a.events.Publish(events.Event{Type: events.ServiceStatusChanged, Payload: id})
-	} else {
-		a.events.Publish(events.Event{Type: events.ServiceError, Payload: map[string]string{"service": id, "error": err.Error()}})
 	}
 	return err
 }
@@ -211,6 +230,16 @@ func (a *Application) SwitchPHPVersion(version string) error {
 	if err != nil {
 		a.events.Publish(events.Event{Type: events.ServiceError, Payload: map[string]string{"component": "php", "error": err.Error()}})
 		return err
+	}
+
+	if apacheSvc, err := a.ServiceManager.GetService("apache"); err == nil {
+		if configurable, ok := apacheSvc.(interface{ ConfigurePHP(string) error }); ok {
+			phpPath := filepath.Dir(a.RuntimeManager.PHP().PHPBinaryPath(version))
+			if confErr := configurable.ConfigurePHP(phpPath); confErr != nil {
+				a.log.Warn(logger.CategoryRuntime, "Failed to configure Apache for PHP", "error", confErr)
+				return fmt.Errorf("failed to configure Apache for PHP: %w", confErr)
+			}
+		}
 	}
 
 	a.events.Publish(events.Event{Type: events.PHPVersionChanged, Payload: version})
