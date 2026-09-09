@@ -90,3 +90,38 @@ func ensureDir(path string) error {
 	}
 	return os.MkdirAll(path, 0o755)
 }
+
+func CopyDir(src, dest string) error {
+	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		relPath, err := filepath.Rel(src, path)
+		if err != nil {
+			return err
+		}
+		targetPath := filepath.Join(dest, relPath)
+
+		if info.IsDir() {
+			return os.MkdirAll(targetPath, info.Mode())
+		}
+
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(targetPath, data, info.Mode())
+	})
+}
+
+func MoveOrCopyDir(src, dest string) error {
+	if err := os.Rename(src, dest); err == nil {
+		return nil
+	}
+	if err := CopyDir(src, dest); err != nil {
+		return err
+	}
+	return os.RemoveAll(src)
+}
+

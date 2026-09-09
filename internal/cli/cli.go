@@ -45,6 +45,8 @@ func Run() {
 		handleServiceCommand(application, "restart", cmdArgs)
 	case "php":
 		handlePHPCommand(application, cmdArgs)
+	case "install", "-install":
+		handleInstallCommand(application, cmdArgs)
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", cmd)
 		printUsage()
@@ -76,8 +78,10 @@ func printUsage() {
 	fmt.Println("  workbench php list                   List installed PHP versions")
 	fmt.Println("  workbench php current                Show active PHP version")
 	fmt.Println("  workbench php use <version>          Switch active PHP version")
+	fmt.Println("  workbench install <service> <zip>    Extract and install runtime package from zip")
+	fmt.Println("  workbench -install <service> <zip>   Extract and install runtime package from zip")
 	fmt.Println()
-	fmt.Println("Services: apache, mariadb")
+	fmt.Println("Services: apache, mariadb, php")
 }
 
 func handleStatus(application *app.Application) {
@@ -189,9 +193,30 @@ func handlePHPCommand(application *app.Application, args []string) {
 	}
 }
 
+func handleInstallCommand(application *app.Application, args []string) {
+	if len(args) < 2 {
+		fmt.Fprintf(os.Stderr, "Usage: workbench install <apache|mariadb|php> <path_to_zip>\n")
+		fmt.Fprintf(os.Stderr, "   or: workbench -install <apache|mariadb|php> <path_to_zip>\n")
+		os.Exit(1)
+	}
+
+	serviceType := args[0]
+	zipPath := args[1]
+
+	fmt.Printf("Extracting and installing %s from %s...\n", capitalise(serviceType), zipPath)
+	version, err := application.InstallPackage(serviceType, zipPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("%s version %s installed successfully to bin/%s/%s.\n", capitalise(serviceType), version, strings.ToLower(serviceType), version)
+}
+
 func capitalise(s string) string {
 	if s == "" {
 		return s
 	}
 	return strings.ToUpper(s[:1]) + s[1:]
 }
+

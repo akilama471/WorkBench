@@ -279,6 +279,16 @@ func (a *Application) GetEnvironmentStatus() map[string]string {
 	return summary
 }
 
+func (a *Application) InstallPackage(serviceType, zipPath string) (string, error) {
+	a.log.Info(logger.CategoryPackage, "installing local zip package", "service", serviceType, "zipPath", zipPath)
+	version, err := a.PackageManager.InstallLocalZip(serviceType, zipPath)
+	if err != nil {
+		return "", err
+	}
+	return version, nil
+}
+
 func (a *Application) Events() *events.Bus {
 	return a.events
 }
+
