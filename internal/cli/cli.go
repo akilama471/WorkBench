@@ -45,6 +45,8 @@ func Run() {
 		handleServiceCommand(application, "restart", cmdArgs)
 	case "php":
 		handlePHPCommand(application, cmdArgs)
+	case "project":
+		handleProjectCommand(application, cmdArgs)
 	case "install", "-install":
 		handleInstallCommand(application, cmdArgs)
 	default:
@@ -61,11 +63,16 @@ func resolveRootDir() string {
 
 	exe, err := os.Executable()
 	if err == nil {
-		return filepath.Dir(exe)
+		dir := filepath.Dir(exe)
+		if strings.ToLower(filepath.Base(dir)) == "build" {
+			return filepath.Dir(dir)
+		}
+		return dir
 	}
 
 	return "."
 }
+
 
 func printUsage() {
 	fmt.Println("WorkBench - Local Development Environment Manager")
@@ -78,6 +85,10 @@ func printUsage() {
 	fmt.Println("  workbench php list                   List installed PHP versions")
 	fmt.Println("  workbench php current                Show active PHP version")
 	fmt.Println("  workbench php use <version>          Switch active PHP version")
+	fmt.Println("  workbench project list               List all tracked local projects")
+	fmt.Println("  workbench project scan               Scan www/ directory for local projects")
+	fmt.Println("  workbench project add <path>         Register a custom project path")
+	fmt.Println("  workbench project remove <path>      Unregister a tracked project")
 	fmt.Println("  workbench install <service> <zip>    Extract and install runtime package from zip")
 	fmt.Println("  workbench -install <service> <zip>   Extract and install runtime package from zip")
 	fmt.Println()
@@ -193,6 +204,77 @@ func handlePHPCommand(application *app.Application, args []string) {
 	}
 }
 
+func handleProjectCommand(application *app.Application, args []string) {
+	if len(args) == 0 {
+		fmt.Fprintf(os.Stderr, "Usage: workbench project <list|scan|add|remove> [path]\n")
+		os.Exit(1)
+	}
+
+	switch args[0] {
+	case "list":
+		projects, err := application.ListProjects()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		if len(projects) == 0 {
+			fmt.Println("No projects tracked. Run 'workbench project scan' to discover projects in www/")
+			return
+		}
+		fmt.Printf("%-20s  %-12s  %s\n", "NAME", "TYPE", "PATH")
+		fmt.Println(strings.Repeat("-", 60))
+		for _, p := range projects {
+			fmt.Printf("%-20s  %-12s  %s\n", p.Name, p.Type, p.Path)
+		}
+
+	case "scan":
+		fmt.Println("Scanning www/ for local web projects...")
+		projects, err := application.ScanProjects()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		if len(projects) == 0 {
+			fmt.Println("No projects found in www/ directory.")
+			return
+		}
+		fmt.Printf("Scan complete. Discovered %d project(s):\n\n", len(projects))
+		fmt.Printf("%-20s  %-12s  %s\n", "NAME", "TYPE", "PATH")
+		fmt.Println(strings.Repeat("-", 60))
+		for _, p := range projects {
+			fmt.Printf("%-20s  %-12s  %s\n", p.Name, p.Type, p.Path)
+		}
+
+	case "add":
+		if len(args) < 2 {
+			fmt.Fprintf(os.Stderr, "Usage: workbench project add <path>\n")
+			os.Exit(1)
+		}
+		p, err := application.AddProject(args[1])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("Project '%s' (%s) registered successfully at %s\n", p.Name, p.Type, p.Path)
+
+	case "remove":
+		if len(args) < 2 {
+			fmt.Fprintf(os.Stderr, "Usage: workbench project remove <path>\n")
+			os.Exit(1)
+		}
+		if err := application.RemoveProject(args[1]); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("Project at '%s' removed from tracked list.\n", args[1])
+
+	default:
+		fmt.Fprintf(os.Stderr, "Unknown project command: %s\n", args[0])
+		fmt.Fprintf(os.Stderr, "Usage: workbench project <list|scan|add|remove> [path]\n")
+		os.Exit(1)
+	}
+}
+
 func handleInstallCommand(application *app.Application, args []string) {
 	if len(args) < 2 {
 		fmt.Fprintf(os.Stderr, "Usage: workbench install <apache|mariadb|php> <path_to_zip>\n")
@@ -219,4 +301,5 @@ func capitalise(s string) string {
 	}
 	return strings.ToUpper(s[:1]) + s[1:]
 }
+
 

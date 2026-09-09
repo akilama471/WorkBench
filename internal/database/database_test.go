@@ -181,3 +181,63 @@ func TestDatabaseIdempotentMigrations(t *testing.T) {
 		t.Errorf("data lost after second migration: got %q", val)
 	}
 }
+
+func TestDatabaseProjectCRUD(t *testing.T) {
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "test.db")
+
+	db, err := Open(dbPath)
+	if err != nil {
+		t.Fatalf("Open() failed: %v", err)
+	}
+	defer db.Close()
+
+	if err := db.Initialize(); err != nil {
+		t.Fatalf("Initialize() failed: %v", err)
+	}
+
+	projPath := filepath.Join(dir, "my-app")
+	if err := db.SaveProject("my-app", projPath, "laravel"); err != nil {
+		t.Fatalf("SaveProject() failed: %v", err)
+	}
+
+	p, err := db.GetProjectByPath(projPath)
+	if err != nil {
+		t.Fatalf("GetProjectByPath() failed: %v", err)
+	}
+	if p == nil {
+		t.Fatal("GetProjectByPath() returned nil")
+	}
+	if p.Name != "my-app" || p.Type != "laravel" {
+		t.Errorf("GetProjectByPath() got name=%q type=%q, want \"my-app\", \"laravel\"", p.Name, p.Type)
+	}
+
+	// Update project type
+	if err := db.SaveProject("my-app", projPath, "php"); err != nil {
+		t.Fatalf("SaveProject() update failed: %v", err)
+	}
+
+	all, err := db.GetAllProjects()
+	if err != nil {
+		t.Fatalf("GetAllProjects() failed: %v", err)
+	}
+	if len(all) != 1 {
+		t.Fatalf("GetAllProjects() count = %d, want 1", len(all))
+	}
+	if all[0].Type != "php" {
+		t.Errorf("GetAllProjects()[0].Type = %q, want \"php\"", all[0].Type)
+	}
+
+	if err := db.DeleteProjectByPath(projPath); err != nil {
+		t.Fatalf("DeleteProjectByPath() failed: %v", err)
+	}
+
+	all, err = db.GetAllProjects()
+	if err != nil {
+		t.Fatalf("GetAllProjects() after delete failed: %v", err)
+	}
+	if len(all) != 0 {
+		t.Errorf("GetAllProjects() after delete count = %d, want 0", len(all))
+	}
+}
+

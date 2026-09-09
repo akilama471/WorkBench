@@ -157,6 +157,27 @@ workbench install php C:\Downloads\php-8.3.30-Win32-vs16-x64.zip
 
 ---
 
+### 5. Local Project Management & Framework Scanning
+
+Discover and manage local web projects inside `www/` or external custom directories with auto framework detection (`laravel`, `php`, `node`, `python`, `go`, `generic`):
+
+```bash
+# Scan www/ web root for local projects
+workbench project scan
+
+# List all tracked projects
+workbench project list
+
+# Register a custom project location outside www/
+workbench project add C:\Projects\my-laravel-app
+
+# Unregister a project
+workbench project remove C:\Projects\my-laravel-app
+```
+
+
+---
+
 ## Documentation
 
 For detailed architectural specifications and design decisions, see the [docs/](file:///i:/Project/Hobby/WorkBench/docs) directory:

@@ -292,3 +292,89 @@ func (a *Application) Events() *events.Bus {
 	return a.events
 }
 
+func (a *Application) ScanProjects() ([]*project.Project, error) {
+	wwwPath := a.paths.WWW()
+	scanned, err := a.ProjectManager.ScanDirectory(wwwPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan projects directory: %w", err)
+	}
+
+	if a.db != nil {
+		for _, p := range scanned {
+			if err := a.db.SaveProject(p.Name, p.Path, p.Type); err != nil {
+				a.log.Warn(logger.CategoryDatabase, "failed to save project to DB", "path", p.Path, "error", err)
+			}
+		}
+	}
+
+	return a.ListProjects()
+}
+
+func (a *Application) ListProjects() ([]*project.Project, error) {
+	if a.db != nil {
+		records, err := a.db.GetAllProjects()
+		if err == nil {
+			for _, rec := range records {
+				// Reconcile with filesystem reality (ADR-013)
+				if _, err := os.Stat(rec.Path); os.IsNotExist(err) {
+					_ = a.db.DeleteProjectByPath(rec.Path)
+					a.ProjectManager.Remove(rec.Path)
+					continue
+				}
+
+				if _, exists := a.ProjectManager.Get(rec.Path); !exists {
+					_, _ = a.ProjectManager.Add(rec.Path)
+				}
+			}
+		}
+	}
+
+	return a.ProjectManager.List(), nil
+}
+
+func (a *Application) AddProject(path string) (*project.Project, error) {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return nil, fmt.Errorf("invalid path %s: %w", path, err)
+	}
+
+	info, err := os.Stat(absPath)
+	if err != nil {
+		return nil, fmt.Errorf("project path does not exist %s: %w", absPath, err)
+	}
+	if !info.IsDir() {
+		return nil, fmt.Errorf("project path is not a directory %s", absPath)
+	}
+
+	p, err := a.ProjectManager.Add(absPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if a.db != nil {
+		if err := a.db.SaveProject(p.Name, p.Path, p.Type); err != nil {
+			a.log.Warn(logger.CategoryDatabase, "failed to persist project to DB", "path", p.Path, "error", err)
+		}
+	}
+
+	return p, nil
+}
+
+func (a *Application) RemoveProject(path string) error {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		absPath = path
+	}
+
+	a.ProjectManager.Remove(absPath)
+
+	if a.db != nil {
+		if err := a.db.DeleteProjectByPath(absPath); err != nil {
+			return fmt.Errorf("failed to delete project from DB: %w", err)
+		}
+	}
+
+	return nil
+}
+
+

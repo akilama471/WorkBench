@@ -83,3 +83,58 @@ func (d *Database) GetAllSettings() (map[string]string, error) {
 	}
 	return result, nil
 }
+
+type ProjectRecord struct {
+	ID        int
+	Name      string
+	Path      string
+	Type      string
+	CreatedAt string
+	UpdatedAt string
+}
+
+func (d *Database) SaveProject(name, path, projectType string) error {
+	_, err := d.db.Exec(
+		`INSERT INTO projects (name, path, type, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+		 ON CONFLICT(path) DO UPDATE SET name = excluded.name, type = excluded.type, updated_at = CURRENT_TIMESTAMP`,
+		name, path, projectType,
+	)
+	return err
+}
+
+func (d *Database) GetAllProjects() ([]*ProjectRecord, error) {
+	rows, err := d.db.Query(`SELECT id, name, path, type, created_at, updated_at FROM projects ORDER BY name ASC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var projects []*ProjectRecord
+	for rows.Next() {
+		var p ProjectRecord
+		if err := rows.Scan(&p.ID, &p.Name, &p.Path, &p.Type, &p.CreatedAt, &p.UpdatedAt); err != nil {
+			return nil, err
+		}
+		projects = append(projects, &p)
+	}
+	return projects, nil
+}
+
+func (d *Database) GetProjectByPath(path string) (*ProjectRecord, error) {
+	var p ProjectRecord
+	err := d.db.QueryRow(`SELECT id, name, path, type, created_at, updated_at FROM projects WHERE path = ?`, path).
+		Scan(&p.ID, &p.Name, &p.Path, &p.Type, &p.CreatedAt, &p.UpdatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &p, nil
+}
+
+func (d *Database) DeleteProjectByPath(path string) error {
+	_, err := d.db.Exec(`DELETE FROM projects WHERE path = ?`, path)
+	return err
+}
+

@@ -1,5 +1,11 @@
 package project
 
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+)
+
 type Manager struct {
 	projects map[string]*Project
 	detector *Detector
@@ -54,3 +60,30 @@ func (m *Manager) Remove(path string) {
 func (m *Manager) Count() int {
 	return len(m.projects)
 }
+
+func (m *Manager) ScanDirectory(baseDir string) ([]*Project, error) {
+	entries, err := os.ReadDir(baseDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []*Project{}, nil
+		}
+		return nil, fmt.Errorf("failed to read base directory %s: %w", baseDir, err)
+	}
+
+	var scanned []*Project
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		subDir := filepath.Join(baseDir, entry.Name())
+		p, err := m.Add(subDir)
+		if err != nil {
+			continue
+		}
+		scanned = append(scanned, p)
+	}
+
+	return scanned, nil
+}
+

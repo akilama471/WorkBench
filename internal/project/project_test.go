@@ -99,3 +99,34 @@ func TestManagerRemove(t *testing.T) {
 		t.Error("Get() should not find removed project")
 	}
 }
+
+func TestScanDirectory(t *testing.T) {
+	mgr := NewManager()
+	baseDir := t.TempDir()
+
+	proj1 := filepath.Join(baseDir, "app-laravel")
+	if err := os.MkdirAll(proj1, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(proj1, "artisan"), []byte(""), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	proj2 := filepath.Join(baseDir, "app-node")
+	if err := os.MkdirAll(proj2, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(proj2, "package.json"), []byte("{}"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	scanned, err := mgr.ScanDirectory(baseDir)
+	if err != nil {
+		t.Fatalf("ScanDirectory() failed: %v", err)
+	}
+
+	if len(scanned) != 2 {
+		t.Fatalf("ScanDirectory() returned %d projects, want 2", len(scanned))
+	}
+}
+
