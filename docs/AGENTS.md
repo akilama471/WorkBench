@@ -59,13 +59,11 @@ Do not introduce a web frontend.
 
 The application is a **native desktop application**.
 
-The preferred GUI technology is:
+The target GUI technology is:
 
-> **Fyne**
+> **Qt**
 
-Use Go-native GUI architecture.
-
-If the current repository already contains a GUI technology decision, preserve the existing decision unless the user explicitly changes it.
+The Fyne GUI dependencies have been completely removed. The application currently operates as a lightweight, pure-Go CLI-first platform, with Qt GUI integration targeted for a subsequent phase.
 
 ---
 

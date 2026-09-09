@@ -98,11 +98,11 @@ WorkBench will use Go for:
 
 # ADR-002 — Use Fyne for the Native GUI
 
-**Status:** Accepted
+**Status:** Superseded by ADR-008
 
 ## Decision
 
-WorkBench will use **Fyne** for the desktop GUI.
+WorkBench originally selected **Fyne** for the desktop GUI, but has now removed Fyne in favor of a pure-Go CLI-first architecture (ADR-008) with plans for a Qt desktop GUI.
 
 ## Context
 
@@ -916,3 +916,25 @@ The most important architectural rule is:
 ```text
 Do not make the system more complicated than the developer problem requires.
 ```
+
+---
+
+# ADR-008 — Remove Fyne GUI and Transition to CLI-First Core Engine with Qt GUI Roadmap
+
+**Status:** Accepted
+
+## Decision
+
+WorkBench will completely remove Fyne GUI and its dependencies. WorkBench will focus on maintaining a pure-Go CLI-first engine (`workbench` / `workbench-cli`). Future GUI development will target **Qt** (via IPC backend, C-shared library, or native bindings).
+
+## Context
+
+* Fyne introduced heavy native CGO/GCC toolchain requirements on Windows (`OpenGL`, `GLFW`), making building and testing complex.
+* WorkBench's core engine (`internal/app`, `internal/core`, `internal/service`, `internal/runtime`, `internal/database`) is strictly headless and 100% independent of any GUI.
+* Removing Fyne strips out all desktop CGO dependencies, enabling instant `go build` and `go test ./...` in pure Go mode.
+
+## Consequences
+
+* Fyne dependencies (`fyne.io/fyne/v2`) and `ui/` directory are completely removed.
+* The application builds and runs as a pure Go CLI binary (`workbench` / `workbench-cli`).
+* Qt GUI integration can be developed in a subsequent phase without impacting the Go core engine.
