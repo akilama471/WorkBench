@@ -75,10 +75,10 @@ func (ui *UI) refreshStatus() {
 			ui.apacheStatus = "Not Installed"
 		} else {
 			st := svc.Status()
-			if string(st) == "Running" {
+			if st.String() == "Running" {
 				ui.apacheStatus = fmt.Sprintf("Running (Port %d)", svc.Port())
 			} else {
-				ui.apacheStatus = string(st)
+				ui.apacheStatus = st.String()
 			}
 		}
 	} else {
@@ -91,11 +91,10 @@ func (ui *UI) refreshStatus() {
 			ui.mariaStatus = "Not Installed"
 		} else {
 			st := svc.Status()
-			fmt.Printf("refreshStatus mariadb: %s\n", st)
-			if string(st) == "Running" {
+			if st.String() == "Running" {
 				ui.mariaStatus = fmt.Sprintf("Running (Port %d)", svc.Port())
 			} else {
-				ui.mariaStatus = string(st)
+				ui.mariaStatus = st.String()
 			}
 		}
 	} else {
@@ -108,10 +107,10 @@ func (ui *UI) refreshStatus() {
 			ui.mysqlStatus = "Not Installed"
 		} else {
 			st := svc.Status()
-			if string(st) == "Running" {
+			if st.String() == "Running" {
 				ui.mysqlStatus = fmt.Sprintf("Running (Port %d)", svc.Port())
 			} else {
-				ui.mysqlStatus = string(st)
+				ui.mysqlStatus = st.String()
 			}
 		}
 	} else {
