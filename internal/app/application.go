@@ -295,6 +295,13 @@ func (a *Application) CurrentServiceVersion(serviceID string) (string, error) {
 	data, err := os.ReadFile(activeFile)
 	if err == nil {
 		activeVersion := strings.TrimSpace(string(data))
+		// Strip BOM if present
+		activeVersion = strings.TrimPrefix(activeVersion, "\xef\xbb\xbf")
+		activeVersion = strings.TrimPrefix(activeVersion, "\xff\xfe")
+		activeVersion = strings.TrimPrefix(activeVersion, "\xfe\xff")
+		// Remove null bytes
+		activeVersion = strings.ReplaceAll(activeVersion, "\x00", "")
+		activeVersion = strings.TrimSpace(activeVersion)
 		// Verify it actually exists
 		if info, err := os.Stat(filepath.Join(a.Paths().Bin(), serviceID, activeVersion)); err == nil && info.IsDir() {
 			return activeVersion, nil
