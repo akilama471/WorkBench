@@ -16,6 +16,7 @@ import (
 	"github.com/akilama471/WorkBench/internal/project"
 	"github.com/akilama471/WorkBench/internal/service/apache"
 	"github.com/akilama471/WorkBench/internal/service/mariadb"
+	"github.com/akilama471/WorkBench/internal/service/mysql"
 	"github.com/akilama471/WorkBench/pkg/events"
 )
 
@@ -56,12 +57,16 @@ func New(rootDir string) (*Application, error) {
 
 	apacheSvc := apache.NewService(paths, processMgr, log)
 	mariadbSvc := mariadb.NewService(paths, processMgr, log)
+	mysqlSvc := mysql.NewService(paths, processMgr, log)
 
 	if err := serviceManager.Register(apacheSvc); err != nil {
 		log.Warn(logger.CategoryApplication, "failed to register Apache service", "error", err)
 	}
 	if err := serviceManager.Register(mariadbSvc); err != nil {
 		log.Warn(logger.CategoryApplication, "failed to register MariaDB service", "error", err)
+	}
+	if err := serviceManager.Register(mysqlSvc); err != nil {
+		log.Warn(logger.CategoryApplication, "failed to register MySQL service", "error", err)
 	}
 
 	runtimeManager := core.NewRuntimeManager(paths, log)
@@ -149,6 +154,13 @@ func (a *Application) Close() error {
 
 func (a *Application) StartService(id string) error {
 	a.log.Info(logger.CategoryService, "starting service", "id", id)
+
+	if id == "mariadb" && a.isServiceRunning("mysql") {
+		return fmt.Errorf("cannot start MariaDB: MySQL is currently running on port 3306. Stop MySQL first ('workbench stop mysql')")
+	}
+	if id == "mysql" && a.isServiceRunning("mariadb") {
+		return fmt.Errorf("cannot start MySQL: MariaDB is currently running on port 3306. Stop MariaDB first ('workbench stop mariadb')")
+	}
 
 	if id == "apache" {
 		if phpVersion, err := a.CurrentPHPVersion(); err == nil && phpVersion != "" && phpVersion != "none" {

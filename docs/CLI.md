@@ -6,13 +6,13 @@ WorkBench provides a native, pure-Go command-line interface for managing local d
 
 ### 1. Service Management
 - **`workbench status`**  
-  Displays operational status for all installed services (Apache, MariaDB, PHP).
+  Displays operational status for all installed services (Apache, MariaDB, MySQL, PHP).
 - **`workbench start <service>`**  
-  Starts the specified service (`apache` or `mariadb`).
+  Starts the specified service (`apache`, `mariadb`, or `mysql`).
 - **`workbench stop <service>`**  
-  Stops the specified service (`apache` or `mariadb`).
+  Stops the specified service (`apache`, `mariadb`, or `mysql`).
 - **`workbench restart <service>`**  
-  Restarts the specified service (`apache` or `mariadb`).
+  Restarts the specified service (`apache`, `mariadb`, or `mysql`).
 
 ### 2. PHP Version Management
 - **`workbench php list`**  
@@ -26,6 +26,9 @@ WorkBench provides a native, pure-Go command-line interface for managing local d
 - **`workbench install apache <path_to_zip>`** / **`workbench -install apache <path_to_zip>`**  
   Extracts the Apache ZIP archive, auto-detects the version, moves files to `bin/apache/[version]/`, and completes initial setup.
 - **`workbench install mariadb <path_to_zip>`** / **`workbench -install mariadb <path_to_zip>`**  
-  Extracts the MariaDB ZIP archive, auto-detects the version, moves files to `bin/mariadb/[version]/`, and initializes data directories.
+  Extracts the MariaDB ZIP archive, auto-detects the version, moves files to `bin/mariadb/[version]/`, and initializes data directories in `data/mariadb/`.
+- **`workbench install mysql <path_to_zip>`** / **`workbench -install mysql <path_to_zip>`**  
+  Extracts the MySQL ZIP archive, auto-detects the version, moves files to `bin/mysql/[version]/`, and initializes data directories in `data/mysql/`.
 - **`workbench install php <path_to_zip>`** / **`workbench -install php <path_to_zip>`**  
   Extracts the PHP ZIP archive, auto-detects the version, moves files to `bin/php/[version]/`, and configures `php.ini`.
+

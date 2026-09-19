@@ -63,11 +63,7 @@ func resolveRootDir() string {
 
 	exe, err := os.Executable()
 	if err == nil {
-		dir := filepath.Dir(exe)
-		if strings.ToLower(filepath.Base(dir)) == "build" {
-			return filepath.Dir(dir)
-		}
-		return dir
+		return filepath.Dir(exe)
 	}
 
 	return "."
@@ -79,9 +75,9 @@ func printUsage() {
 	fmt.Println()
 	fmt.Println("Usage:")
 	fmt.Println("  workbench status                     Show status of all services")
-	fmt.Println("  workbench start <service>            Start a service (apache, mariadb)")
-	fmt.Println("  workbench stop <service>             Stop a service (apache, mariadb)")
-	fmt.Println("  workbench restart <service>          Restart a service (apache, mariadb)")
+	fmt.Println("  workbench start <service>            Start a service (apache, mariadb, mysql)")
+	fmt.Println("  workbench stop <service>             Stop a service (apache, mariadb, mysql)")
+	fmt.Println("  workbench restart <service>          Restart a service (apache, mariadb, mysql)")
 	fmt.Println("  workbench php list                   List installed PHP versions")
 	fmt.Println("  workbench php current                Show active PHP version")
 	fmt.Println("  workbench php use <version>          Switch active PHP version")
@@ -92,11 +88,11 @@ func printUsage() {
 	fmt.Println("  workbench install <service> <zip>    Extract and install runtime package from zip")
 	fmt.Println("  workbench -install <service> <zip>   Extract and install runtime package from zip")
 	fmt.Println()
-	fmt.Println("Services: apache, mariadb, php")
+	fmt.Println("Services: apache, mariadb, mysql, php")
 }
 
 func handleStatus(application *app.Application) {
-	services := []string{"apache", "mariadb"}
+	services := []string{"apache", "mariadb", "mysql"}
 
 	for _, svcID := range services {
 		svc, err := application.ServiceManager.GetService(svcID)
@@ -277,8 +273,8 @@ func handleProjectCommand(application *app.Application, args []string) {
 
 func handleInstallCommand(application *app.Application, args []string) {
 	if len(args) < 2 {
-		fmt.Fprintf(os.Stderr, "Usage: workbench install <apache|mariadb|php> <path_to_zip>\n")
-		fmt.Fprintf(os.Stderr, "   or: workbench -install <apache|mariadb|php> <path_to_zip>\n")
+		fmt.Fprintf(os.Stderr, "Usage: workbench install <apache|mariadb|mysql|php> <path_to_zip>\n")
+		fmt.Fprintf(os.Stderr, "   or: workbench -install <apache|mariadb|mysql|php> <path_to_zip>\n")
 		os.Exit(1)
 	}
 

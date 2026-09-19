@@ -18,14 +18,11 @@ var versionRegex = regexp.MustCompile(`\b(\d+\.\d+(?:\.\d+)?)\b`)
 // and installs it to application-root/bin/<service>/<version>/.
 func (m *Manager) InstallLocalZip(serviceType, zipPath string) (string, error) {
 	svc := strings.ToLower(strings.TrimSpace(serviceType))
-	if svc != "apache" && svc != "mariadb" && svc != "php" && svc != "httpd" && svc != "mysql" {
-		return "", fmt.Errorf("unsupported service type '%s': expected apache, mariadb, or php", serviceType)
+	if svc != "apache" && svc != "mariadb" && svc != "mysql" && svc != "php" && svc != "httpd" {
+		return "", fmt.Errorf("unsupported service type '%s': expected apache, mariadb, mysql, or php", serviceType)
 	}
 	if svc == "httpd" {
 		svc = "apache"
-	}
-	if svc == "mysql" {
-		svc = "mariadb"
 	}
 
 	zipAbs, err := filepath.Abs(zipPath)
@@ -55,6 +52,8 @@ func (m *Manager) InstallLocalZip(serviceType, zipPath string) (string, error) {
 		targetDir = m.paths.ApacheBin(version)
 	case "mariadb":
 		targetDir = m.paths.MariaDBBin(version)
+	case "mysql":
+		targetDir = m.paths.MySQLBin(version)
 	case "php":
 		targetDir = m.paths.PHPBin(version)
 	}
@@ -105,6 +104,8 @@ func detectServiceVersion(svc, zipPath, sourceDir string) string {
 		return "2.4.63"
 	case "mariadb":
 		return "11.7.2"
+	case "mysql":
+		return "8.0.36"
 	case "php":
 		return "8.3.30"
 	default:
@@ -129,8 +130,9 @@ func (m *Manager) postInstallSetup(svc, targetDir string) error {
 		}
 	case "apache":
 		os.MkdirAll(filepath.Join(targetDir, "logs"), 0o755)
-	case "mariadb":
+	case "mariadb", "mysql":
 		os.MkdirAll(filepath.Join(targetDir, "data"), 0o755)
 	}
 	return nil
 }
+

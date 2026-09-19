@@ -1,4 +1,4 @@
-package mariadb
+package mysql
 
 import (
 	"errors"
@@ -30,8 +30,8 @@ func NewService(paths *filesystem.Paths, proc process.Manager, log *logger.Logge
 	}
 }
 
-func (s *Service) ID() string   { return "mariadb" }
-func (s *Service) Name() string { return "MariaDB" }
+func (s *Service) ID() string   { return "mysql" }
+func (s *Service) Name() string { return "MySQL" }
 
 func (s *Service) IsInstalled() bool {
 	binDir := s.resolveBinDir()
@@ -40,7 +40,7 @@ func (s *Service) IsInstalled() bool {
 }
 
 func (s *Service) Start() error {
-	s.log.Info(logger.CategoryService, "starting MariaDB")
+	s.log.Info(logger.CategoryService, "starting MySQL")
 
 	if !s.IsInstalled() {
 		return fmt.Errorf("%s: %w", s.ID(), service.ErrServiceNotInstalled)
@@ -54,16 +54,16 @@ func (s *Service) Start() error {
 
 	if err := s.ensureDataDir(); err != nil {
 		s.status = service.StatusError
-		return fmt.Errorf("failed to prepare MariaDB data directory: %w", err)
+		return fmt.Errorf("failed to prepare MySQL data directory: %w", err)
 	}
 
 	mysqld := s.resolveExecutable()
 	if mysqld == "" {
 		s.status = service.StatusError
-		return fmt.Errorf("MariaDB mysqld executable not found")
+		return fmt.Errorf("MySQL mysqld executable not found")
 	}
 
-	dataDir := s.paths.MariaDBData()
+	dataDir := s.paths.MySQLData()
 	config := s.resolveConfig()
 
 	args := []string{
@@ -84,17 +84,17 @@ func (s *Service) Start() error {
 	proc, err := s.process.Start(procConfig)
 	if err != nil {
 		s.status = service.StatusError
-		return fmt.Errorf("failed to start MariaDB: %w", err)
+		return fmt.Errorf("failed to start MySQL: %w", err)
 	}
 
 	s.pid = proc.PID
 	s.status = service.StatusRunning
-	s.log.Info(logger.CategoryService, "MariaDB started", "pid", s.pid)
+	s.log.Info(logger.CategoryService, "MySQL started", "pid", s.pid)
 	return nil
 }
 
 func (s *Service) Stop() error {
-	s.log.Info(logger.CategoryService, "stopping MariaDB")
+	s.log.Info(logger.CategoryService, "stopping MySQL")
 
 	if s.pid == 0 {
 		s.pid = s.readPIDFile()
@@ -109,18 +109,18 @@ func (s *Service) Stop() error {
 
 	if err := s.process.Stop(s.pid); err != nil {
 		s.status = service.StatusError
-		return fmt.Errorf("failed to stop MariaDB: %w", err)
+		return fmt.Errorf("failed to stop MySQL: %w", err)
 	}
 
 	s.status = service.StatusStopped
 	s.pid = 0
-	s.log.Info(logger.CategoryService, "MariaDB stopped")
+	s.log.Info(logger.CategoryService, "MySQL stopped")
 	return nil
 }
 
 func (s *Service) Restart() error {
 	if err := s.Stop(); err != nil && !errors.Is(err, service.ErrServiceNotRunning) {
-		return fmt.Errorf("failed to restart MariaDB (stop phase): %w", err)
+		return fmt.Errorf("failed to restart MySQL (stop phase): %w", err)
 	}
 	return s.Start()
 }
@@ -144,7 +144,7 @@ func (s *Service) Status() service.Status {
 }
 
 func (s *Service) readPIDFile() int {
-	pidPath := filepath.Join(s.paths.MariaDBData(), "mariadb.pid")
+	pidPath := filepath.Join(s.paths.MySQLData(), "mysql.pid")
 	data, err := os.ReadFile(pidPath)
 	if err != nil {
 		return 0
@@ -157,17 +157,17 @@ func (s *Service) readPIDFile() int {
 }
 
 func (s *Service) resolveBinDir() string {
-	mariadbBase := filepath.Join(s.paths.Bin(), "mariadb")
-	subDirs, err := os.ReadDir(mariadbBase)
+	mysqlBase := filepath.Join(s.paths.Bin(), "mysql")
+	subDirs, err := os.ReadDir(mysqlBase)
 	if err == nil {
 		for _, sd := range subDirs {
 			if sd.IsDir() {
-				return filepath.Join(mariadbBase, sd.Name())
+				return filepath.Join(mysqlBase, sd.Name())
 			}
 		}
-		return mariadbBase
+		return mysqlBase
 	}
-	return mariadbBase
+	return mysqlBase
 }
 
 func (s *Service) resolveExecutable() string {
@@ -189,11 +189,11 @@ func (s *Service) resolveExecutable() string {
 }
 
 func (s *Service) resolveConfig() string {
-	conf := filepath.Join(s.paths.MariaDBConfig(), "my.ini")
+	conf := filepath.Join(s.paths.MySQLConfig(), "my.ini")
 	if _, err := os.Stat(conf); err == nil {
 		return conf
 	}
-	conf = filepath.Join(s.paths.MariaDBConfig(), "my.cnf")
+	conf = filepath.Join(s.paths.MySQLConfig(), "my.cnf")
 	if _, err := os.Stat(conf); err == nil {
 		return conf
 	}
@@ -201,7 +201,7 @@ func (s *Service) resolveConfig() string {
 }
 
 func (s *Service) ensureDataDir() error {
-	dataDir := s.paths.MariaDBData()
+	dataDir := s.paths.MySQLData()
 	info, err := os.Stat(dataDir)
 	if err == nil && info.IsDir() {
 		return nil
@@ -210,9 +210,9 @@ func (s *Service) ensureDataDir() error {
 }
 
 func (s *Service) ErrorLogPath() string {
-	return filepath.Join(s.paths.MariaDBLogs(), "error.log")
+	return filepath.Join(s.paths.MySQLLogs(), "error.log")
 }
 
 func (s *Service) DataDirectory() string {
-	return s.paths.MariaDBData()
+	return s.paths.MySQLData()
 }

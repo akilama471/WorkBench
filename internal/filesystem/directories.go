@@ -30,10 +30,13 @@ func (i *Initializer) Initialize() error {
 		i.paths.ApacheConfig(),
 		i.paths.PHPConfig(),
 		i.paths.MariaDBConfig(),
+		i.paths.MySQLConfig(),
 		i.paths.MariaDBData(),
+		i.paths.MySQLData(),
 		i.paths.ApacheLogs(),
 		i.paths.PHPLogs(),
 		i.paths.MariaDBLogs(),
+		i.paths.MySQLLogs(),
 	}
 
 	for _, dir := range dirs {

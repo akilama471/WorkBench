@@ -68,6 +68,10 @@ func (p *Paths) MariaDBBin(version string) string {
 	return filepath.Join(p.Bin(), "mariadb", version)
 }
 
+func (p *Paths) MySQLBin(version string) string {
+	return filepath.Join(p.Bin(), "mysql", version)
+}
+
 func (p *Paths) ActivePHP() string {
 	return filepath.Join(p.Active(), "php")
 }
@@ -84,8 +88,16 @@ func (p *Paths) MariaDBConfig() string {
 	return filepath.Join(p.Etc(), "mariadb")
 }
 
+func (p *Paths) MySQLConfig() string {
+	return filepath.Join(p.Etc(), "mysql")
+}
+
 func (p *Paths) MariaDBData() string {
 	return filepath.Join(p.Data(), "mariadb")
+}
+
+func (p *Paths) MySQLData() string {
+	return filepath.Join(p.Data(), "mysql")
 }
 
 func (p *Paths) ApacheLogs() string {
@@ -100,6 +112,10 @@ func (p *Paths) MariaDBLogs() string {
 	return filepath.Join(p.Logs(), "mariadb")
 }
 
+func (p *Paths) MySQLLogs() string {
+	return filepath.Join(p.Logs(), "mysql")
+}
+
 func (p *Paths) CacheDownloads() string {
 	return filepath.Join(p.Cache(), "downloads")
 }
@@ -107,3 +123,4 @@ func (p *Paths) CacheDownloads() string {
 func (p *Paths) CacheExtract() string {
 	return filepath.Join(p.Cache(), "extract")
 }
+

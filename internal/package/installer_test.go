@@ -102,4 +102,24 @@ func TestInstallLocalZip(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(targetMariaDir, "bin", "mariadbd.exe")); err != nil {
 		t.Errorf("mariadbd.exe should exist in target directory %s", targetMariaDir)
 	}
+
+	// Test MySQL ZIP
+	mysqlZip := filepath.Join(zipDir, "mysql-8.0.36-winx64.zip")
+	createTestZip(t, mysqlZip, map[string]string{
+		"mysql-8.0.36-winx64/bin/mysqld.exe": "dummy mysqld binary",
+	})
+
+	versionMySQL, err := mgr.InstallLocalZip("mysql", mysqlZip)
+	if err != nil {
+		t.Fatalf("InstallLocalZip mysql failed: %v", err)
+	}
+	if versionMySQL != "8.0.36" {
+		t.Errorf("expected version 8.0.36, got %s", versionMySQL)
+	}
+
+	targetMySQLDir := paths.MySQLBin("8.0.36")
+	if _, err := os.Stat(filepath.Join(targetMySQLDir, "bin", "mysqld.exe")); err != nil {
+		t.Errorf("mysqld.exe should exist in target directory %s", targetMySQLDir)
+	}
 }
+
