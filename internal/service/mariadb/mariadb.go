@@ -34,6 +34,10 @@ func NewService(paths *filesystem.Paths, proc process.Manager, log *logger.Logge
 func (s *Service) ID() string   { return "mariadb" }
 func (s *Service) Name() string { return "MariaDB" }
 
+func (s *Service) Port() int {
+	return 3306 // Default port
+}
+
 func (s *Service) IsInstalled() bool {
 	binDir := s.resolveBinDir()
 	info, err := os.Stat(binDir)

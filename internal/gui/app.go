@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"gioui.org/app"
 	"gioui.org/font/gofont"
@@ -73,7 +74,12 @@ func (ui *UI) refreshStatus() {
 		if !svc.IsInstalled() {
 			ui.apacheStatus = "Not Installed"
 		} else {
-			ui.apacheStatus = string(svc.Status())
+			st := svc.Status()
+			if string(st) == "Running" {
+				ui.apacheStatus = fmt.Sprintf("Running (Port %d)", svc.Port())
+			} else {
+				ui.apacheStatus = string(st)
+			}
 		}
 	} else {
 		ui.apacheStatus = "Unknown"
@@ -84,7 +90,12 @@ func (ui *UI) refreshStatus() {
 		if !svc.IsInstalled() {
 			ui.mariaStatus = "Not Installed"
 		} else {
-			ui.mariaStatus = string(svc.Status())
+			st := svc.Status()
+			if string(st) == "Running" {
+				ui.mariaStatus = fmt.Sprintf("Running (Port %d)", svc.Port())
+			} else {
+				ui.mariaStatus = string(st)
+			}
 		}
 	} else {
 		ui.mariaStatus = "Unknown"
@@ -95,7 +106,12 @@ func (ui *UI) refreshStatus() {
 		if !svc.IsInstalled() {
 			ui.mysqlStatus = "Not Installed"
 		} else {
-			ui.mysqlStatus = string(svc.Status())
+			st := svc.Status()
+			if string(st) == "Running" {
+				ui.mysqlStatus = fmt.Sprintf("Running (Port %d)", svc.Port())
+			} else {
+				ui.mysqlStatus = string(st)
+			}
 		}
 	} else {
 		ui.mysqlStatus = "Unknown"
@@ -122,26 +138,32 @@ func (ui *UI) loop() error {
 			if ui.btnStartApache.Clicked(gtx) {
 				ui.backend.StartService("apache")
 				ui.refreshStatus()
+				ui.window.Invalidate()
 			}
 			if ui.btnStopApache.Clicked(gtx) {
 				ui.backend.StopService("apache")
 				ui.refreshStatus()
+				ui.window.Invalidate()
 			}
 			if ui.btnStartMaria.Clicked(gtx) {
 				ui.backend.StartService("mariadb")
 				ui.refreshStatus()
+				ui.window.Invalidate()
 			}
 			if ui.btnStopMaria.Clicked(gtx) {
 				ui.backend.StopService("mariadb")
 				ui.refreshStatus()
+				ui.window.Invalidate()
 			}
 			if ui.btnStartMysql.Clicked(gtx) {
 				ui.backend.StartService("mysql")
 				ui.refreshStatus()
+				ui.window.Invalidate()
 			}
 			if ui.btnStopMysql.Clicked(gtx) {
 				ui.backend.StopService("mysql")
 				ui.refreshStatus()
+				ui.window.Invalidate()
 			}
 			if ui.btnOptions.Clicked(gtx) {
 				ui.openOptionsWindow()
@@ -201,7 +223,7 @@ func (ui *UI) serviceRow(gtx layout.Context, name, status, version string, start
 			return layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceEnd}.Layout(gtx,
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					btn := material.Button(ui.theme, startBtn, "Start")
-					if status == "Running" {
+					if strings.HasPrefix(status, "Running") {
 						gtx = gtx.Disabled()
 					}
 					return btn.Layout(gtx)
@@ -209,7 +231,7 @@ func (ui *UI) serviceRow(gtx layout.Context, name, status, version string, start
 				layout.Rigid(layout.Spacer{Width: unit.Dp(8)}.Layout),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					btn := material.Button(ui.theme, stopBtn, "Stop")
-					if status != "Running" {
+					if !strings.HasPrefix(status, "Running") {
 						gtx = gtx.Disabled()
 					}
 					return btn.Layout(gtx)

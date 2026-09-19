@@ -26,14 +26,10 @@ func (m *manager) Start(config StartConfig) (*Process, error) {
 	cmd.Env = config.Environment
 
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP,
+		CreationFlags: 0x00000008, // DETACHED_PROCESS
 	}
 
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create stderr pipe: %w", err)
-	}
-	_ = stderr
+	// Stderr pipe removed because we don't read it and it causes deadlocks if unread
 
 	if err := cmd.Start(); err != nil {
 		return nil, fmt.Errorf("failed to start process %s: %w", config.Executable, err)
@@ -72,7 +68,8 @@ func (m *manager) Stop(pid int) error {
 }
 
 func (m *manager) IsRunning(pid int) bool {
-	handle, err := syscall.OpenProcess(syscall.PROCESS_QUERY_INFORMATION, false, uint32(pid))
+	const PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+	handle, err := syscall.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, uint32(pid))
 	if err != nil {
 		return false
 	}

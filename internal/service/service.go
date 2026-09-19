@@ -50,4 +50,5 @@ type Service interface {
 
 	Status() Status
 	IsInstalled() bool
+	Port() int
 }
