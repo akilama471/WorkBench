@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -158,6 +159,16 @@ func (s *Service) readPIDFile() int {
 
 func (s *Service) resolveBinDir() string {
 	mariadbBase := filepath.Join(s.paths.Bin(), "mariadb")
+	
+	activeFile := filepath.Join(s.paths.Active(), "mariadb")
+	if data, err := os.ReadFile(activeFile); err == nil {
+		activeVersion := strings.TrimSpace(string(data))
+		targetDir := filepath.Join(mariadbBase, activeVersion)
+		if info, err := os.Stat(targetDir); err == nil && info.IsDir() {
+			return targetDir
+		}
+	}
+
 	subDirs, err := os.ReadDir(mariadbBase)
 	if err == nil {
 		for _, sd := range subDirs {
@@ -202,11 +213,35 @@ func (s *Service) resolveConfig() string {
 
 func (s *Service) ensureDataDir() error {
 	dataDir := s.paths.MariaDBData()
-	info, err := os.Stat(dataDir)
-	if err == nil && info.IsDir() {
+	if err := os.MkdirAll(dataDir, 0o755); err != nil {
+		return err
+	}
+
+	// Check if the system tables exist
+	mysqlDir := filepath.Join(dataDir, "mysql")
+	if info, err := os.Stat(mysqlDir); err == nil && info.IsDir() {
 		return nil
 	}
-	return os.MkdirAll(dataDir, 0o755)
+
+	s.log.Info(logger.CategoryService, "initializing MariaDB data directory", "dir", dataDir)
+
+	binDir := s.resolveBinDir()
+	installDbExe := filepath.Join(binDir, "bin", "mariadb-install-db.exe")
+	if _, err := os.Stat(installDbExe); os.IsNotExist(err) {
+		installDbExe = filepath.Join(binDir, "bin", "mysql_install_db.exe")
+	}
+
+	if _, err := os.Stat(installDbExe); os.IsNotExist(err) {
+		return fmt.Errorf("mariadb-install-db.exe or mysql_install_db.exe not found in %s", filepath.Join(binDir, "bin"))
+	}
+
+	cmd := exec.Command(installDbExe, "--datadir="+dataDir)
+	cmd.Dir = binDir
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to run install-db: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Service) ErrorLogPath() string {

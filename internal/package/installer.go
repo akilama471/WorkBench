@@ -35,6 +35,24 @@ func (m *Manager) InstallLocalZip(serviceType, zipPath string) (string, error) {
 		return "", fmt.Errorf("zip file not found: %s", zipPath)
 	}
 
+	// Fail early if version is already installed (guessed from zip name)
+	if guessVersion := detectServiceVersion(svc, zipAbs, ""); guessVersion != "" {
+		var checkDir string
+		switch svc {
+		case "apache":
+			checkDir = m.paths.ApacheBin(guessVersion)
+		case "mariadb":
+			checkDir = m.paths.MariaDBBin(guessVersion)
+		case "mysql":
+			checkDir = m.paths.MySQLBin(guessVersion)
+		case "php":
+			checkDir = m.paths.PHPBin(guessVersion)
+		}
+		if _, err := os.Stat(checkDir); err == nil {
+			return "", fmt.Errorf("validation failed: version %s is already installed", guessVersion)
+		}
+	}
+
 	tempExtractDir := filepath.Join(m.paths.CacheExtract(), fmt.Sprintf("%s-install-%d", svc, time.Now().UnixNano()))
 	defer os.RemoveAll(tempExtractDir)
 
@@ -44,6 +62,11 @@ func (m *Manager) InstallLocalZip(serviceType, zipPath string) (string, error) {
 	}
 
 	sourceDir := unwrapSingleRootFolder(tempExtractDir)
+	
+	if err := validateExtractedService(svc, sourceDir); err != nil {
+		return "", fmt.Errorf("validation failed for extracted zip: %w", err)
+	}
+	
 	version := detectServiceVersion(svc, zipAbs, sourceDir)
 
 	var targetDir string
@@ -63,8 +86,7 @@ func (m *Manager) InstallLocalZip(serviceType, zipPath string) (string, error) {
 	}
 
 	if _, err := os.Stat(targetDir); err == nil {
-		m.log.Info(logger.CategoryPackage, "removing existing installation at target directory", "path", targetDir)
-		os.RemoveAll(targetDir)
+		return "", fmt.Errorf("validation failed: version %s is already installed", version)
 	}
 
 	m.log.Info(logger.CategoryPackage, "installing package to bin directory", "service", svc, "version", version, "target", targetDir)
@@ -111,6 +133,38 @@ func detectServiceVersion(svc, zipPath, sourceDir string) string {
 	default:
 		return "1.0.0"
 	}
+}
+
+func fileExistsWithoutExt(dir, name string) bool {
+	if _, err := os.Stat(filepath.Join(dir, name)); err == nil {
+		return true
+	}
+	if _, err := os.Stat(filepath.Join(dir, name+".exe")); err == nil {
+		return true
+	}
+	return false
+}
+
+func validateExtractedService(svc, sourceDir string) error {
+	switch svc {
+	case "apache":
+		if !fileExistsWithoutExt(filepath.Join(sourceDir, "bin"), "httpd") {
+			return fmt.Errorf("missing httpd executable in bin/ folder")
+		}
+	case "mariadb":
+		if !fileExistsWithoutExt(filepath.Join(sourceDir, "bin"), "mariadbd") && !fileExistsWithoutExt(filepath.Join(sourceDir, "bin"), "mysqld") {
+			return fmt.Errorf("missing mariadbd or mysqld executable in bin/ folder")
+		}
+	case "mysql":
+		if !fileExistsWithoutExt(filepath.Join(sourceDir, "bin"), "mysqld") {
+			return fmt.Errorf("missing mysqld executable in bin/ folder")
+		}
+	case "php":
+		if !fileExistsWithoutExt(sourceDir, "php") {
+			return fmt.Errorf("missing php executable in root directory")
+		}
+	}
+	return nil
 }
 
 func (m *Manager) postInstallSetup(svc, targetDir string) error {

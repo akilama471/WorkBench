@@ -266,6 +266,86 @@ func (a *Application) SwitchPHPVersion(version string) error {
 	return nil
 }
 
+func (a *Application) ListServiceVersions(serviceID string) ([]string, error) {
+	if serviceID == "php" {
+		return a.ListPHPVersions()
+	}
+	binDir := filepath.Join(a.Paths().Bin(), serviceID)
+	entries, err := os.ReadDir(binDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var versions []string
+	for _, e := range entries {
+		if e.IsDir() {
+			versions = append(versions, e.Name())
+		}
+	}
+	return versions, nil
+}
+
+func (a *Application) CurrentServiceVersion(serviceID string) (string, error) {
+	if serviceID == "php" {
+		return a.CurrentPHPVersion()
+	}
+	activeFile := filepath.Join(a.Paths().Active(), serviceID)
+	data, err := os.ReadFile(activeFile)
+	if err == nil {
+		activeVersion := strings.TrimSpace(string(data))
+		// Verify it actually exists
+		if info, err := os.Stat(filepath.Join(a.Paths().Bin(), serviceID, activeVersion)); err == nil && info.IsDir() {
+			return activeVersion, nil
+		}
+	}
+	// Fallback to the first available directory
+	versions, _ := a.ListServiceVersions(serviceID)
+	if len(versions) > 0 {
+		return versions[0], nil
+	}
+	return "none", nil
+}
+
+func (a *Application) SwitchServiceVersion(serviceID, version string) error {
+	if serviceID == "php" {
+		return a.SwitchPHPVersion(version)
+	}
+	
+	// Verify version exists
+	versions, err := a.ListServiceVersions(serviceID)
+	if err != nil {
+		return err
+	}
+	found := false
+	for _, v := range versions {
+		if v == version {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return fmt.Errorf("version %s not installed for %s", version, serviceID)
+	}
+
+	activeFile := filepath.Join(a.Paths().Active(), serviceID)
+	os.MkdirAll(filepath.Dir(activeFile), 0755)
+	
+	if err := os.WriteFile(activeFile, []byte(version), 0644); err != nil {
+		return err
+	}
+	
+	if a.isServiceRunning(serviceID) {
+		a.log.Info(logger.CategoryRuntime, "restarting service for version change", "service", serviceID, "version", version)
+		if restartErr := a.RestartService(serviceID); restartErr != nil {
+			a.log.Warn(logger.CategoryRuntime, "service restart after version switch failed", "service", serviceID, "error", restartErr)
+		}
+	}
+	
+	return nil
+}
+
 func (a *Application) isServiceRunning(id string) bool {
 	status, err := a.ServiceManager.Status(id)
 	if err != nil {

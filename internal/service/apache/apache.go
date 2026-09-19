@@ -151,6 +151,17 @@ func (s *Service) readPIDFile() int {
 }
 
 func (s *Service) resolveBinDir() string {
+	apacheBin := filepath.Join(s.paths.Bin(), "apache")
+	
+	activeFile := filepath.Join(s.paths.Active(), "apache")
+	if data, err := os.ReadFile(activeFile); err == nil {
+		activeVersion := strings.TrimSpace(string(data))
+		targetDir := filepath.Join(apacheBin, activeVersion)
+		if info, err := os.Stat(targetDir); err == nil && info.IsDir() {
+			return targetDir
+		}
+	}
+
 	dirs, _ := os.ReadDir(s.paths.Bin())
 
 	for _, d := range dirs {
@@ -171,7 +182,7 @@ func (s *Service) resolveBinDir() string {
 		}
 	}
 
-	return filepath.Join(s.paths.Bin(), "apache")
+	return apacheBin
 }
 
 func (s *Service) resolveExecutable() string {

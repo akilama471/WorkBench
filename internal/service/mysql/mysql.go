@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -158,6 +159,16 @@ func (s *Service) readPIDFile() int {
 
 func (s *Service) resolveBinDir() string {
 	mysqlBase := filepath.Join(s.paths.Bin(), "mysql")
+	
+	activeFile := filepath.Join(s.paths.Active(), "mysql")
+	if data, err := os.ReadFile(activeFile); err == nil {
+		activeVersion := strings.TrimSpace(string(data))
+		targetDir := filepath.Join(mysqlBase, activeVersion)
+		if info, err := os.Stat(targetDir); err == nil && info.IsDir() {
+			return targetDir
+		}
+	}
+
 	subDirs, err := os.ReadDir(mysqlBase)
 	if err == nil {
 		for _, sd := range subDirs {
@@ -202,11 +213,40 @@ func (s *Service) resolveConfig() string {
 
 func (s *Service) ensureDataDir() error {
 	dataDir := s.paths.MySQLData()
-	info, err := os.Stat(dataDir)
-	if err == nil && info.IsDir() {
+	if err := os.MkdirAll(dataDir, 0o755); err != nil {
+		return err
+	}
+
+	// Check if the system tables exist
+	mysqlDir := filepath.Join(dataDir, "mysql")
+	if info, err := os.Stat(mysqlDir); err == nil && info.IsDir() {
 		return nil
 	}
-	return os.MkdirAll(dataDir, 0o755)
+
+	s.log.Info(logger.CategoryService, "initializing MySQL data directory", "dir", dataDir)
+
+	mysqldExe := s.resolveExecutable()
+	if mysqldExe == "" {
+		return fmt.Errorf("mysqld executable not found")
+	}
+
+	cmd := exec.Command(mysqldExe, "--initialize-insecure", "--datadir="+dataDir)
+	cmd.Dir = filepath.Dir(mysqldExe)
+	if err := cmd.Run(); err != nil {
+		// Fallback to older mysql_install_db for older versions
+		installDbExe := filepath.Join(filepath.Dir(mysqldExe), "mysql_install_db.exe")
+		if _, err2 := os.Stat(installDbExe); err2 == nil {
+			cmd2 := exec.Command(installDbExe, "--datadir="+dataDir)
+			cmd2.Dir = filepath.Dir(mysqldExe)
+			if err3 := cmd2.Run(); err3 != nil {
+				return fmt.Errorf("failed to run mysql_install_db: %w", err3)
+			}
+			return nil
+		}
+		return fmt.Errorf("failed to initialize mysql data dir: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Service) ErrorLogPath() string {

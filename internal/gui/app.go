@@ -27,17 +27,20 @@ type UI struct {
 	btnStopApache  widget.Clickable
 	btnStartMaria  widget.Clickable
 	btnStopMaria   widget.Clickable
+	btnStartMysql  widget.Clickable
+	btnStopMysql   widget.Clickable
 
 	// Status Cache
 	apacheStatus string
+	apacheVer    string
 	mariaStatus  string
+	mariaVer     string
+	mysqlStatus  string
+	mysqlVer     string
 	phpStatus    string
 
-	// Install Package Section
-	installZipPath widget.Editor
-	installType    widget.Enum
-	btnInstall     widget.Clickable
-	installMsg     string
+	// Top Right Button
+	btnOptions widget.Clickable
 }
 
 func NewUI(b *backend.Application) *UI {
@@ -49,8 +52,6 @@ func NewUI(b *backend.Application) *UI {
 		theme:   th,
 		window:  new(app.Window),
 	}
-	ui.installZipPath.SingleLine = true
-	ui.installType.Value = "apache"
 	return ui
 }
 
@@ -77,6 +78,7 @@ func (ui *UI) refreshStatus() {
 	} else {
 		ui.apacheStatus = "Unknown"
 	}
+	ui.apacheVer, _ = ui.backend.CurrentServiceVersion("apache")
 
 	if svc, err := ui.backend.ServiceManager.GetService("mariadb"); err == nil {
 		if !svc.IsInstalled() {
@@ -87,8 +89,20 @@ func (ui *UI) refreshStatus() {
 	} else {
 		ui.mariaStatus = "Unknown"
 	}
+	ui.mariaVer, _ = ui.backend.CurrentServiceVersion("mariadb")
 
-	if php, err := ui.backend.CurrentPHPVersion(); err == nil && php != "" {
+	if svc, err := ui.backend.ServiceManager.GetService("mysql"); err == nil {
+		if !svc.IsInstalled() {
+			ui.mysqlStatus = "Not Installed"
+		} else {
+			ui.mysqlStatus = string(svc.Status())
+		}
+	} else {
+		ui.mysqlStatus = "Unknown"
+	}
+	ui.mysqlVer, _ = ui.backend.CurrentServiceVersion("mysql")
+
+	if php, err := ui.backend.CurrentServiceVersion("php"); err == nil && php != "" {
 		ui.phpStatus = php
 	} else {
 		ui.phpStatus = "None"
@@ -121,27 +135,16 @@ func (ui *UI) loop() error {
 				ui.backend.StopService("mariadb")
 				ui.refreshStatus()
 			}
-			if ui.btnInstall.Clicked(gtx) {
-				zipPath := ui.installZipPath.Text()
-				serviceType := ui.installType.Value
-				if zipPath != "" {
-					ui.installMsg = "Installing..."
-					// Update UI before starting long running task
-					e.Frame(gtx.Ops) 
-					go func(sType, p string) {
-						version, err := ui.backend.InstallPackage(sType, p)
-						if err != nil {
-							ui.installMsg = fmt.Sprintf("Error: %v", err)
-						} else {
-							ui.installMsg = fmt.Sprintf("Success! Installed %s %s", sType, version)
-							ui.refreshStatus()
-						}
-						ui.window.Invalidate()
-					}(serviceType, zipPath)
-					continue
-				} else {
-					ui.installMsg = "Please enter a valid ZIP path."
-				}
+			if ui.btnStartMysql.Clicked(gtx) {
+				ui.backend.StartService("mysql")
+				ui.refreshStatus()
+			}
+			if ui.btnStopMysql.Clicked(gtx) {
+				ui.backend.StopService("mysql")
+				ui.refreshStatus()
+			}
+			if ui.btnOptions.Clicked(gtx) {
+				ui.openOptionsWindow()
 			}
 
 			ui.layout(gtx)
@@ -154,60 +157,44 @@ func (ui *UI) layout(gtx layout.Context) layout.Dimensions {
 	return layout.UniformInset(unit.Dp(16)).Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 		return layout.Flex{Axis: layout.Vertical, Spacing: layout.SpaceBetween}.Layout(gtx,
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				title := material.H4(ui.theme, "WorkBench Dashboard")
-				return title.Layout(gtx)
+				return layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceBetween, Alignment: layout.Middle}.Layout(gtx,
+					layout.Rigid(material.H4(ui.theme, "WorkBench Dashboard").Layout),
+					layout.Rigid(material.Button(ui.theme, &ui.btnOptions, "Options").Layout),
+				)
 			}),
 			layout.Rigid(layout.Spacer{Height: unit.Dp(16)}.Layout),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				return ui.serviceRow(gtx, "Apache HTTP Server", ui.apacheStatus, &ui.btnStartApache, &ui.btnStopApache)
+				return ui.serviceRow(gtx, "Apache HTTP Server", ui.apacheStatus, ui.apacheVer, &ui.btnStartApache, &ui.btnStopApache)
 			}),
 			layout.Rigid(layout.Spacer{Height: unit.Dp(8)}.Layout),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				return ui.serviceRow(gtx, "MariaDB Database", ui.mariaStatus, &ui.btnStartMaria, &ui.btnStopMaria)
+				return ui.serviceRow(gtx, "MariaDB Database", ui.mariaStatus, ui.mariaVer, &ui.btnStartMaria, &ui.btnStopMaria)
+			}),
+			layout.Rigid(layout.Spacer{Height: unit.Dp(8)}.Layout),
+			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				return ui.serviceRow(gtx, "MySQL Database", ui.mysqlStatus, ui.mysqlVer, &ui.btnStartMysql, &ui.btnStopMysql)
 			}),
 			layout.Rigid(layout.Spacer{Height: unit.Dp(16)}.Layout),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 				phpText := material.Body1(ui.theme, fmt.Sprintf("Active PHP Version: %s", ui.phpStatus))
 				return phpText.Layout(gtx)
 			}),
-			layout.Rigid(layout.Spacer{Height: unit.Dp(32)}.Layout),
-			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				title := material.H5(ui.theme, "Install Package")
-				return title.Layout(gtx)
-			}),
-			layout.Rigid(layout.Spacer{Height: unit.Dp(8)}.Layout),
-			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
-					layout.Rigid(material.RadioButton(ui.theme, &ui.installType, "apache", "Apache").Layout),
-					layout.Rigid(material.RadioButton(ui.theme, &ui.installType, "mariadb", "MariaDB").Layout),
-					layout.Rigid(material.RadioButton(ui.theme, &ui.installType, "mysql", "MySQL").Layout),
-					layout.Rigid(material.RadioButton(ui.theme, &ui.installType, "php", "PHP").Layout),
-				)
-			}),
-			layout.Rigid(layout.Spacer{Height: unit.Dp(8)}.Layout),
-			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				ed := material.Editor(ui.theme, &ui.installZipPath, "Absolute Path to ZIP File")
-				return ed.Layout(gtx)
-			}),
-			layout.Rigid(layout.Spacer{Height: unit.Dp(8)}.Layout),
-			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
-					layout.Rigid(material.Button(ui.theme, &ui.btnInstall, "Install from ZIP").Layout),
-					layout.Rigid(layout.Spacer{Width: unit.Dp(16)}.Layout),
-					layout.Rigid(material.Body2(ui.theme, ui.installMsg).Layout),
-				)
-			}),
 			layout.Flexed(1, layout.Spacer{}.Layout), // Push everything up
 		)
 	})
 }
 
-func (ui *UI) serviceRow(gtx layout.Context, name, status string, startBtn, stopBtn *widget.Clickable) layout.Dimensions {
+func (ui *UI) serviceRow(gtx layout.Context, name, status, version string, startBtn, stopBtn *widget.Clickable) layout.Dimensions {
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle, Spacing: layout.SpaceBetween}.Layout(gtx,
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 				layout.Rigid(material.Body1(ui.theme, name).Layout),
-				layout.Rigid(material.Body2(ui.theme, "Status: "+status).Layout),
+				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+					if version != "" && version != "none" {
+						return material.Body2(ui.theme, "Status: "+status+" (v"+version+")").Layout(gtx)
+					}
+					return material.Body2(ui.theme, "Status: "+status).Layout(gtx)
+				}),
 			)
 		}),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {

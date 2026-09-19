@@ -4,11 +4,13 @@ go 1.26.5
 
 require (
 	gioui.org v0.10.2
+	github.com/sqweek/dialog v0.0.0-20260123140253-64c163d53aac
 	modernc.org/sqlite v1.54.0
 )
 
 require (
 	gioui.org/shader v1.0.9 // indirect
+	github.com/TheTitanrain/w32 v0.0.0-20180517000239-4f5cfb03fabf // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/go-text/typesetting v0.3.4 // indirect
 	github.com/google/uuid v1.6.0 // indirect
