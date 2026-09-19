@@ -91,6 +91,7 @@ func (ui *UI) refreshStatus() {
 			ui.mariaStatus = "Not Installed"
 		} else {
 			st := svc.Status()
+			fmt.Printf("refreshStatus mariadb: %s\n", st)
 			if string(st) == "Running" {
 				ui.mariaStatus = fmt.Sprintf("Running (Port %d)", svc.Port())
 			} else {

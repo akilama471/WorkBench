@@ -71,6 +71,7 @@ func (m *manager) IsRunning(pid int) bool {
 	const PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 	handle, err := syscall.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, uint32(pid))
 	if err != nil {
+		fmt.Printf("IsRunning OpenProcess failed for pid %d: %v\n", pid, err)
 		return false
 	}
 	defer syscall.CloseHandle(handle)
@@ -78,9 +79,14 @@ func (m *manager) IsRunning(pid int) bool {
 	var exitCode uint32
 	err = syscall.GetExitCodeProcess(handle, &exitCode)
 	if err != nil {
+		fmt.Printf("IsRunning GetExitCodeProcess failed for pid %d: %v\n", pid, err)
 		return false
 	}
 
 	const STILL_ACTIVE = 259
-	return exitCode == STILL_ACTIVE
+	isRunning := exitCode == STILL_ACTIVE
+	if !isRunning {
+		fmt.Printf("IsRunning returning false for pid %d because exitCode is %d\n", pid, exitCode)
+	}
+	return isRunning
 }

@@ -74,6 +74,7 @@ func (s *Service) Start() error {
 	args := []string{
 		"--datadir=" + dataDir,
 		"--port=3306",
+		"--pid-file=" + filepath.Join(dataDir, "mysql.pid"),
 	}
 
 	if config != "" {
@@ -149,8 +150,23 @@ func (s *Service) Status() service.Status {
 }
 
 func (s *Service) readPIDFile() int {
-	pidPath := filepath.Join(s.paths.MySQLData(), "mysql.pid")
+	dataDir := s.paths.MySQLData()
+	pidPath := filepath.Join(dataDir, "mysql.pid")
+	
 	data, err := os.ReadFile(pidPath)
+	if err != nil {
+		// Fallback to finding any .pid file (e.g. DESKTOP-XXX.pid from older versions)
+		entries, err2 := os.ReadDir(dataDir)
+		if err2 == nil {
+			for _, e := range entries {
+				if !e.IsDir() && strings.HasSuffix(e.Name(), ".pid") {
+					data, err = os.ReadFile(filepath.Join(dataDir, e.Name()))
+					break
+				}
+			}
+		}
+	}
+	
 	if err != nil {
 		return 0
 	}
