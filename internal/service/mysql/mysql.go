@@ -152,7 +152,7 @@ func (s *Service) Status() service.Status {
 func (s *Service) readPIDFile() int {
 	dataDir := s.paths.MySQLData()
 	pidPath := filepath.Join(dataDir, "mysql.pid")
-	
+
 	data, err := os.ReadFile(pidPath)
 	if err != nil {
 		// Fallback to finding any .pid file (e.g. DESKTOP-XXX.pid from older versions)
@@ -166,7 +166,7 @@ func (s *Service) readPIDFile() int {
 			}
 		}
 	}
-	
+
 	if err != nil {
 		return 0
 	}
@@ -179,7 +179,7 @@ func (s *Service) readPIDFile() int {
 
 func (s *Service) resolveBinDir() string {
 	mysqlBase := filepath.Join(s.paths.Bin(), "mysql")
-	
+
 	activeFile := filepath.Join(s.paths.Active(), "mysql")
 	if data, err := os.ReadFile(activeFile); err == nil {
 		activeVersion := strings.TrimSpace(string(data))

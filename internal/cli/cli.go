@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/akilama471/WorkBench/internal/app"
+	"github.com/akilama471/WorkBench/internal/winsvc"
 )
 
 // Run executes the WorkBench command line interface.
@@ -49,6 +50,8 @@ func Run() {
 		handleProjectCommand(application, cmdArgs)
 	case "install", "-install":
 		handleInstallCommand(application, cmdArgs)
+	case "service":
+		handleWindowsServiceCommand(application, cmdArgs)
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", cmd)
 		printUsage()
@@ -68,7 +71,6 @@ func resolveRootDir() string {
 
 	return "."
 }
-
 
 func printUsage() {
 	fmt.Println("WorkBench - Local Development Environment Manager")
@@ -298,4 +300,44 @@ func capitalise(s string) string {
 	return strings.ToUpper(s[:1]) + s[1:]
 }
 
+func handleWindowsServiceCommand(application *app.Application, args []string) {
+	if len(args) < 1 {
+		os.Exit(1)
+	}
 
+	action := args[0]
+	switch action {
+	case "run":
+		delayMs := 0
+		var services []string
+		if len(args) > 1 {
+			fmt.Sscanf(args[1], "%d", &delayMs)
+		}
+		if len(args) > 2 {
+			services = args[2:]
+		}
+
+		winsvc.RunAsService(application, services, delayMs)
+	case "install":
+		delayMs := 0
+		var services []string
+		if len(args) > 1 {
+			fmt.Sscanf(args[1], "%d", &delayMs)
+		}
+		if len(args) > 2 {
+			services = args[2:]
+		}
+
+		err := winsvc.InstallService(delayMs, services)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Install failed: %v\n", err)
+			os.Exit(1)
+		}
+	case "remove":
+		err := winsvc.RemoveService()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Remove failed: %v\n", err)
+			os.Exit(1)
+		}
+	}
+}

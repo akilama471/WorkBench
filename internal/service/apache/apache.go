@@ -156,7 +156,7 @@ func (s *Service) readPIDFile() int {
 
 func (s *Service) resolveBinDir() string {
 	apacheBin := filepath.Join(s.paths.Bin(), "apache")
-	
+
 	activeFile := filepath.Join(s.paths.Active(), "apache")
 	if data, err := os.ReadFile(activeFile); err == nil {
 		activeVersion := strings.TrimSpace(string(data))
@@ -365,7 +365,7 @@ func (s *Service) updatePHPModule(confPath, phpVersionPath string) error {
 	if !foundIniDir {
 		result = append(result, fmt.Sprintf(`PHPIniDir "%s"`, filepath.ToSlash(phpIniDir)))
 	}
-	
+
 	if !strings.Contains(content, "application/x-httpd-php") {
 		result = append(result, `AddType application/x-httpd-php .php`)
 	}

@@ -123,4 +123,3 @@ func (p *Paths) CacheDownloads() string {
 func (p *Paths) CacheExtract() string {
 	return filepath.Join(p.Cache(), "extract")
 }
-

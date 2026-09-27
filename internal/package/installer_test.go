@@ -67,8 +67,8 @@ func TestInstallLocalZip(t *testing.T) {
 	// Test Apache ZIP
 	apacheZip := filepath.Join(zipDir, "httpd-2.4.63-win64-VS17.zip")
 	createTestZip(t, apacheZip, map[string]string{
-		"Apache24/bin/httpd.exe":     "dummy httpd binary",
-		"Apache24/conf/httpd.conf":  "# dummy httpd conf",
+		"Apache24/bin/httpd.exe":   "dummy httpd binary",
+		"Apache24/conf/httpd.conf": "# dummy httpd conf",
 	})
 
 	versionApache, err := mgr.InstallLocalZip("apache", apacheZip)
@@ -122,4 +122,3 @@ func TestInstallLocalZip(t *testing.T) {
 		t.Errorf("mysqld.exe should exist in target directory %s", targetMySQLDir)
 	}
 }
-

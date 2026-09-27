@@ -11,9 +11,9 @@ import (
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/text"
+	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
-    "gioui.org/unit"
 
 	backend "github.com/akilama471/WorkBench/internal/app"
 )
@@ -47,7 +47,7 @@ type UI struct {
 func NewUI(b *backend.Application) *UI {
 	th := material.NewTheme()
 	th.Shaper = text.NewShaper(text.WithCollection(gofont.Collection()))
-	
+
 	ui := &UI{
 		backend: b,
 		theme:   th,

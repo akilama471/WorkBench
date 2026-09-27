@@ -86,4 +86,3 @@ func (m *Manager) ScanDirectory(baseDir string) ([]*Project, error) {
 
 	return scanned, nil
 }
-

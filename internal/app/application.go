@@ -197,7 +197,7 @@ func (a *Application) StopService(id string) error {
 
 func (a *Application) RestartService(id string) error {
 	a.log.Info(logger.CategoryService, "restarting service", "id", id)
-	
+
 	if err := a.StopService(id); err != nil && err.Error() != "service is not running" && !strings.Contains(err.Error(), "service is not running") {
 		// We ignore "not running" errors because we just want to ensure it's stopped before starting
 		a.log.Warn(logger.CategoryService, "warning during stop phase of restart", "error", err)
@@ -319,7 +319,7 @@ func (a *Application) SwitchServiceVersion(serviceID, version string) error {
 	if serviceID == "php" {
 		return a.SwitchPHPVersion(version)
 	}
-	
+
 	// Verify version exists
 	versions, err := a.ListServiceVersions(serviceID)
 	if err != nil {
@@ -338,18 +338,18 @@ func (a *Application) SwitchServiceVersion(serviceID, version string) error {
 
 	activeFile := filepath.Join(a.Paths().Active(), serviceID)
 	os.MkdirAll(filepath.Dir(activeFile), 0755)
-	
+
 	if err := os.WriteFile(activeFile, []byte(version), 0644); err != nil {
 		return err
 	}
-	
+
 	if a.isServiceRunning(serviceID) {
 		a.log.Info(logger.CategoryRuntime, "restarting service for version change", "service", serviceID, "version", version)
 		if restartErr := a.RestartService(serviceID); restartErr != nil {
 			a.log.Warn(logger.CategoryRuntime, "service restart after version switch failed", "service", serviceID, "error", restartErr)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -384,6 +384,15 @@ func (a *Application) InstallPackage(serviceType, zipPath string) (string, error
 	if err != nil {
 		return "", err
 	}
+
+	if strings.ToLower(serviceType) == "php" {
+		current, _ := a.CurrentPHPVersion()
+		if current == "" || current == "none" {
+			a.log.Info(logger.CategoryRuntime, "auto-setting newly installed PHP as active", "version", version)
+			_ = a.SwitchPHPVersion(version)
+		}
+	}
+
 	return version, nil
 }
 
@@ -475,5 +484,3 @@ func (a *Application) RemoveProject(path string) error {
 
 	return nil
 }
-
-

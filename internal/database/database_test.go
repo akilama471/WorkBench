@@ -240,4 +240,3 @@ func TestDatabaseProjectCRUD(t *testing.T) {
 		t.Errorf("GetAllProjects() after delete count = %d, want 0", len(all))
 	}
 }
-

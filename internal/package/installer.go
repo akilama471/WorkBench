@@ -62,11 +62,11 @@ func (m *Manager) InstallLocalZip(serviceType, zipPath string) (string, error) {
 	}
 
 	sourceDir := unwrapSingleRootFolder(tempExtractDir)
-	
+
 	if err := validateExtractedService(svc, sourceDir); err != nil {
 		return "", fmt.Errorf("validation failed for extracted zip: %w", err)
 	}
-	
+
 	version := detectServiceVersion(svc, zipAbs, sourceDir)
 
 	var targetDir string
@@ -104,9 +104,21 @@ func (m *Manager) InstallLocalZip(serviceType, zipPath string) (string, error) {
 
 func unwrapSingleRootFolder(dir string) string {
 	entries, err := os.ReadDir(dir)
-	if err == nil && len(entries) == 1 && entries[0].IsDir() {
-		return filepath.Join(dir, entries[0].Name())
+	if err != nil {
+		return dir
 	}
+
+	var dirs []os.DirEntry
+	for _, entry := range entries {
+		if entry.IsDir() {
+			dirs = append(dirs, entry)
+		}
+	}
+
+	if len(dirs) == 1 {
+		return filepath.Join(dir, dirs[0].Name())
+	}
+
 	return dir
 }
 
@@ -189,4 +201,3 @@ func (m *Manager) postInstallSetup(svc, targetDir string) error {
 	}
 	return nil
 }
-

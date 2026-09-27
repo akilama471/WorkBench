@@ -137,4 +137,3 @@ func (d *Database) DeleteProjectByPath(path string) error {
 	_, err := d.db.Exec(`DELETE FROM projects WHERE path = ?`, path)
 	return err
 }
-

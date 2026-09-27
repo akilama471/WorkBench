@@ -10,6 +10,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 
+	"github.com/akilama471/WorkBench/internal/winsvc"
 	"github.com/sqweek/dialog"
 )
 
@@ -44,6 +45,16 @@ type OptionsUI struct {
 	// General Tab
 	controls    map[string]*ServiceVersionControl
 	generalList widget.List
+
+	// Schedule Tab
+	btnSchedule      widget.Clickable
+	autoStartEnabled widget.Bool
+	autoStartApache  widget.Bool
+	autoStartMariaDB widget.Bool
+	autoStartMySQL   widget.Bool
+	autoStartDelay   widget.Editor
+	btnApplySchedule widget.Clickable
+	scheduleMsg      string
 }
 
 func (ui *UI) openOptionsWindow() {
@@ -63,6 +74,32 @@ func (ui *UI) openOptionsWindow() {
 	opt.generalList.Axis = layout.Vertical
 	opt.installZipPath.SingleLine = true
 	opt.installType.Value = "apache"
+	opt.autoStartEnabled.Value = IsAutoStartEnabled()
+
+	// Read existing service config if enabled
+	delayStr := "10"
+	if opt.autoStartEnabled.Value {
+		delayMs, services, err := winsvc.GetServiceConfig()
+		if err == nil {
+			delayStr = fmt.Sprintf("%d", delayMs/1000)
+			for _, s := range services {
+				if s == "apache" {
+					opt.autoStartApache.Value = true
+				} else if s == "mariadb" {
+					opt.autoStartMariaDB.Value = true
+				} else if s == "mysql" {
+					opt.autoStartMySQL.Value = true
+				}
+			}
+		}
+	} else {
+		// Default selections
+		opt.autoStartApache.Value = true
+		opt.autoStartMariaDB.Value = true
+	}
+
+	opt.autoStartDelay.SingleLine = true
+	opt.autoStartDelay.SetText(delayStr)
 
 	go func() {
 		var ops op.Ops
@@ -79,6 +116,38 @@ func (ui *UI) openOptionsWindow() {
 				}
 				if opt.btnGeneral.Clicked(gtx) {
 					opt.tabIndex = 1
+				}
+				if opt.btnSchedule.Clicked(gtx) {
+					opt.tabIndex = 2
+				}
+
+				if opt.btnApplySchedule.Clicked(gtx) {
+					if opt.autoStartEnabled.Value {
+						var selectedServices []string
+						if opt.autoStartApache.Value {
+							selectedServices = append(selectedServices, "apache")
+						}
+						if opt.autoStartMariaDB.Value {
+							selectedServices = append(selectedServices, "mariadb")
+						}
+						if opt.autoStartMySQL.Value {
+							selectedServices = append(selectedServices, "mysql")
+						}
+
+						err := EnableAutoStart(opt.autoStartDelay.Text(), selectedServices)
+						if err != nil {
+							opt.scheduleMsg = fmt.Sprintf("Error: %v", err)
+						} else {
+							opt.scheduleMsg = "Auto Start Enabled successfully."
+						}
+					} else {
+						err := DisableAutoStart()
+						if err != nil {
+							opt.scheduleMsg = fmt.Sprintf("Error: %v", err)
+						} else {
+							opt.scheduleMsg = "Auto Start Disabled successfully."
+						}
+					}
 				}
 
 				if opt.btnBrowse.Clicked(gtx) {
@@ -148,14 +217,18 @@ func (opt *OptionsUI) layout(gtx layout.Context) layout.Dimensions {
 					layout.Rigid(material.Button(opt.ui.theme, &opt.btnImport, "Import").Layout),
 					layout.Rigid(layout.Spacer{Width: unit.Dp(8)}.Layout),
 					layout.Rigid(material.Button(opt.ui.theme, &opt.btnGeneral, "General").Layout),
+					layout.Rigid(layout.Spacer{Width: unit.Dp(8)}.Layout),
+					layout.Rigid(material.Button(opt.ui.theme, &opt.btnSchedule, "Schedule").Layout),
 				)
 			}),
 			layout.Rigid(layout.Spacer{Height: unit.Dp(16)}.Layout),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 				if opt.tabIndex == 0 {
 					return opt.layoutImportTab(gtx)
+				} else if opt.tabIndex == 1 {
+					return opt.layoutGeneralTab(gtx)
 				}
-				return opt.layoutGeneralTab(gtx)
+				return opt.layoutScheduleTab(gtx)
 			}),
 		)
 	})
@@ -310,4 +383,50 @@ func (opt *OptionsUI) layoutGeneralTab(gtx layout.Context) layout.Dimensions {
 	return lst.Layout(gtx, len(allChildren), func(gtx layout.Context, index int) layout.Dimensions {
 		return allChildren[index](gtx)
 	})
+}
+
+func (opt *OptionsUI) layoutScheduleTab(gtx layout.Context) layout.Dimensions {
+	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			title := material.H5(opt.ui.theme, "Windows Service Auto Start")
+			return title.Layout(gtx)
+		}),
+		layout.Rigid(layout.Spacer{Height: unit.Dp(16)}.Layout),
+		layout.Rigid(material.CheckBox(opt.ui.theme, &opt.autoStartEnabled, "Enable WorkBench Windows Service").Layout),
+		layout.Rigid(layout.Spacer{Height: unit.Dp(16)}.Layout),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			if !opt.autoStartEnabled.Value {
+				gtx = gtx.Disabled()
+			}
+			return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+				layout.Rigid(material.Body2(opt.ui.theme, "Select services to auto-start:").Layout),
+				layout.Rigid(layout.Spacer{Height: unit.Dp(8)}.Layout),
+				layout.Rigid(material.CheckBox(opt.ui.theme, &opt.autoStartApache, "Apache HTTP Server").Layout),
+				layout.Rigid(material.CheckBox(opt.ui.theme, &opt.autoStartMariaDB, "MariaDB").Layout),
+				layout.Rigid(material.CheckBox(opt.ui.theme, &opt.autoStartMySQL, "MySQL").Layout),
+			)
+		}),
+		layout.Rigid(layout.Spacer{Height: unit.Dp(16)}.Layout),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			if !opt.autoStartEnabled.Value {
+				gtx = gtx.Disabled()
+			}
+			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+				layout.Rigid(material.Body1(opt.ui.theme, "Delay before start (seconds): ").Layout),
+				layout.Rigid(layout.Spacer{Width: unit.Dp(8)}.Layout),
+				layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+					ed := material.Editor(opt.ui.theme, &opt.autoStartDelay, "10")
+					return ed.Layout(gtx)
+				}),
+			)
+		}),
+		layout.Rigid(layout.Spacer{Height: unit.Dp(24)}.Layout),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+				layout.Rigid(material.Button(opt.ui.theme, &opt.btnApplySchedule, "Apply").Layout),
+				layout.Rigid(layout.Spacer{Width: unit.Dp(16)}.Layout),
+				layout.Rigid(material.Body2(opt.ui.theme, opt.scheduleMsg).Layout),
+			)
+		}),
+	)
 }

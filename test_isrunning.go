@@ -1,9 +1,10 @@
-
 package main
+
 import (
 	"fmt"
 	"syscall"
 )
+
 func main() {
 	pid := 2628
 	const PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
@@ -13,4 +14,3 @@ func main() {
 	err = syscall.GetExitCodeProcess(handle, &exitCode)
 	fmt.Printf("GetExitCodeProcess err: %v, exitCode: %v\n", err, exitCode)
 }
-

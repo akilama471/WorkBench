@@ -1,5 +1,5 @@
-
 package main
+
 import (
 	"fmt"
 	"github.com/akilama471/WorkBench/internal/app"
@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 )
+
 func main() {
 	log := logger.New(logger.LevelDebug, os.Stdout)
 	a, _ := app.New("I:\\Project\\Hobby\\WorkBench\\build")
@@ -17,4 +18,3 @@ func main() {
 	time.Sleep(1 * time.Second)
 	fmt.Printf("Status after 1s: %s\n", svc.Status())
 }
-

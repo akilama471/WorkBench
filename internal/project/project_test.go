@@ -129,4 +129,3 @@ func TestScanDirectory(t *testing.T) {
 		t.Fatalf("ScanDirectory() returned %d projects, want 2", len(scanned))
 	}
 }
-
