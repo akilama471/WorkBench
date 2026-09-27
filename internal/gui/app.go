@@ -16,6 +16,8 @@ import (
 	"gioui.org/widget/material"
 
 	backend "github.com/akilama471/WorkBench/internal/app"
+	"github.com/akilama471/WorkBench/internal/project"
+	"github.com/sqweek/dialog"
 )
 
 type UI struct {
@@ -42,6 +44,13 @@ type UI struct {
 
 	// Top Right Button
 	btnOptions widget.Clickable
+
+	// Projects
+	projects       []*project.Project
+	projectList    widget.List
+	projectItemBtn []widget.Clickable
+	btnAddProject  widget.Clickable
+	btnScanProject widget.Clickable
 }
 
 func NewUI(b *backend.Application) *UI {
@@ -123,6 +132,8 @@ func (ui *UI) refreshStatus() {
 	} else {
 		ui.phpStatus = "None"
 	}
+
+	ui.refreshProjects()
 }
 
 func (ui *UI) loop() error {
@@ -169,6 +180,34 @@ func (ui *UI) loop() error {
 				ui.openOptionsWindow()
 			}
 
+			if ui.btnAddProject.Clicked(gtx) {
+				go func() {
+					dir, err := dialog.Directory().Title("Select Project Folder").Browse()
+					if err == nil && dir != "" {
+						_, err := ui.backend.AddProject(dir)
+						if err == nil {
+							ui.refreshProjects()
+							ui.window.Invalidate()
+						}
+					}
+				}()
+			}
+
+			if ui.btnScanProject.Clicked(gtx) {
+				ui.backend.ScanProjects()
+				ui.refreshProjects()
+				ui.window.Invalidate()
+			}
+
+			for i := range ui.projects {
+				if ui.projectItemBtn[i].Clicked(gtx) {
+					ui.backend.RemoveProject(ui.projects[i].Path)
+					ui.refreshProjects()
+					ui.window.Invalidate()
+					break // array changed, stop looping to avoid out-of-bounds
+				}
+			}
+
 			ui.layout(gtx)
 			e.Frame(gtx.Ops)
 		}
@@ -201,7 +240,45 @@ func (ui *UI) layout(gtx layout.Context) layout.Dimensions {
 				phpText := material.Body1(ui.theme, fmt.Sprintf("Active PHP Version: %s", ui.phpStatus))
 				return phpText.Layout(gtx)
 			}),
-			layout.Flexed(1, layout.Spacer{}.Layout), // Push everything up
+			layout.Rigid(layout.Spacer{Height: unit.Dp(24)}.Layout),
+			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				return layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceBetween, Alignment: layout.Middle}.Layout(gtx,
+					layout.Rigid(material.H5(ui.theme, "Projects").Layout),
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+							layout.Rigid(material.Button(ui.theme, &ui.btnScanProject, "Scan www/").Layout),
+							layout.Rigid(layout.Spacer{Width: unit.Dp(8)}.Layout),
+							layout.Rigid(material.Button(ui.theme, &ui.btnAddProject, "Add Project").Layout),
+						)
+					}),
+				)
+			}),
+			layout.Rigid(layout.Spacer{Height: unit.Dp(8)}.Layout),
+			layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+				if len(ui.projects) == 0 {
+					return material.Body1(ui.theme, "No projects found.").Layout(gtx)
+				}
+
+				list := material.List(ui.theme, &ui.projectList)
+				return list.Layout(gtx, len(ui.projects), func(gtx layout.Context, index int) layout.Dimensions {
+					p := ui.projects[index]
+					return layout.UniformInset(unit.Dp(4)).Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+						return layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceBetween, Alignment: layout.Middle}.Layout(gtx,
+							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+								return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+									layout.Rigid(material.Body1(ui.theme, p.Name).Layout),
+									layout.Rigid(material.Body2(ui.theme, fmt.Sprintf("%s | %s", p.Type, p.Path)).Layout),
+								)
+							}),
+							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+								btn := material.Button(ui.theme, &ui.projectItemBtn[index], "Remove")
+								btn.Background = ui.theme.Palette.ContrastBg
+								return btn.Layout(gtx)
+							}),
+						)
+					})
+				})
+			}),
 		)
 	})
 }
@@ -239,4 +316,14 @@ func (ui *UI) serviceRow(gtx layout.Context, name, status, version string, start
 			)
 		}),
 	)
+}
+
+func (ui *UI) refreshProjects() {
+	projs, err := ui.backend.ListProjects()
+	if err == nil {
+		ui.projects = projs
+		ui.projectItemBtn = make([]widget.Clickable, len(projs))
+	} else {
+		ui.projects = nil
+	}
 }
