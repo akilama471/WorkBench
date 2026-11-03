@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+*.go linguist-language=Go
+*.c linguist-language=Go
+*.h linguist-language=Go
